@@ -9,7 +9,11 @@ import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 
+import waterdetection.usf.waterdetectionandroid.tfclassification.Classifier;
+import waterdetection.usf.waterdetectionandroid.tfclassification.ClassifierFactory;
+
 public class MainActivity extends AppCompatActivity {
+    private Classifier classifier;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -20,7 +24,7 @@ public class MainActivity extends AppCompatActivity {
         TextView tv = (TextView) findViewById(R.id.sample_text);
         tv.setText(stringFromJNI());
 
-        new ModelDetector(getAssets());
+        classifier = ClassifierFactory.createFloorDetectionClassifier(getAssets());
 
         if (!OpenCVLoader.initDebug()) {
             Log.d("OpenCV", "Internal OpenCV library not found. Using OpenCV Manager for initialization");
