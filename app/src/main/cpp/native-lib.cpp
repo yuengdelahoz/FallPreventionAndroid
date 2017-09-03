@@ -3,7 +3,7 @@
 
 extern "C"
 JNIEXPORT jstring JNICALL
-Java_waterdetection_usf_waterdetectionandroid_MainActivity_stringFromJNI(
+Java_waterdetection_usf_waterdetectionandroid_MainActivity_1old_stringFromJNI(
         JNIEnv* env,
         jobject /* this */) {
     std::string hello = "Hello from C++";

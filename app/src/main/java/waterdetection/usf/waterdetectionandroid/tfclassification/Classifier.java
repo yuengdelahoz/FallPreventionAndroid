@@ -8,7 +8,7 @@ import java.util.List;
  */
 
 public interface Classifier extends Serializable {
-    List<Recognition> classifyImage(float[] inputValues, String dir);
+    float[] classifyImage(float[] inputValues, String dir);
     void enableStatLogging(boolean debug);
     String getStatString();
     void close();

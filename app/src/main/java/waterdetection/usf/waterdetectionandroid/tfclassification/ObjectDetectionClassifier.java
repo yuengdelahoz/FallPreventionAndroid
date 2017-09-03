@@ -7,13 +7,6 @@ import org.opencv.core.Mat;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.util.List;
-
-import waterdetection.usf.waterdetectionandroid.MainActivity;
-
 /**
  * Created by raulestrada on 8/27/17.
  */
@@ -71,7 +64,7 @@ public class ObjectDetectionClassifier implements Classifier {
     }
 
     @Override
-    public List<Recognition> classifyImage(float[] inputValues, String dir) {
+    public float[] classifyImage(float[] inputValues, String dir) {
         float[] results = new float[OUTPUT_SIZE];
         this.inferenceInterface.feed(INPUT_NODE_NAME, inputValues, INPUT_TENSOR_SHAPE);
         this.inferenceInterface.feed(KEEP_PROB_NODE_NAME, KEEP_PROB_VALUE, KEEP_PROB_SHAPE);
@@ -95,7 +88,7 @@ public class ObjectDetectionClassifier implements Classifier {
 
         }
         boolean success = Imgcodecs.imwrite(dir + "/floor.jpg", a);
-        return null;
+        return results;
     }
 
     @Override
