@@ -3,9 +3,16 @@ package waterdetection.usf.waterdetectionandroid.tfclassification;
 import android.content.res.AssetManager;
 import android.util.Log;
 
+import org.opencv.core.Mat;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.util.List;
+
+import waterdetection.usf.waterdetectionandroid.MainActivity;
 
 /**
  * Created by raulestrada on 8/27/17.
@@ -22,8 +29,10 @@ public class ObjectDetectionClassifier implements Classifier {
     private final String[] OUTPUT_NODES;
     private final int OUTPUT_SIZE;
     private final String KEEP_PROB_NODE_NAME;
+    private final float[] KEEP_PROB_VALUE;
+    private final long[] KEEP_PROB_SHAPE;
     // Shape of input tensor
-    private final int[] INPUT_TENSOR_SHAPE;
+    private final long[] INPUT_TENSOR_SHAPE;
 
     // TensorFlowInference object used to make inferences on the graph of the loaded model
     private TensorFlowInferenceInterface inferenceInterface;
@@ -36,11 +45,12 @@ public class ObjectDetectionClassifier implements Classifier {
     }
 
     public ObjectDetectionClassifier(String modelFile, String inputNodeName, String outputNodeName, String[] outputNodes,
-                                     int outputSize, String keepProbNodeName, int[] inputTensorShape, AssetManager assetManager) {
+                                     int outputSize, String keepProbNodeName, float[] keepProbValues, long[] keepProbShape,
+                                     long[] inputTensorShape, AssetManager assetManager) {
         if (modelFile == null || modelFile.trim().isEmpty() || inputNodeName == null || inputNodeName.trim().isEmpty()
                 || outputNodeName == null || outputNodeName.trim().isEmpty() || outputNodes == null || outputNodes.length == 0
                 || outputSize < 0 || keepProbNodeName == null || keepProbNodeName.trim().isEmpty() || inputTensorShape == null
-                || inputTensorShape.length == 0 || assetManager == null) {
+                || inputTensorShape.length == 0 || assetManager == null || keepProbValues == null || keepProbValues.length == 0) {
             throw new IllegalArgumentException("Object detection classifier constructor has received null or invalid values");
         }
         this.MODEL_FILE = modelFile;
@@ -50,6 +60,8 @@ public class ObjectDetectionClassifier implements Classifier {
         this.OUTPUT_SIZE = outputSize;
         this.KEEP_PROB_NODE_NAME = keepProbNodeName;
         this.INPUT_TENSOR_SHAPE = inputTensorShape;
+        this.KEEP_PROB_SHAPE = keepProbShape;
+        this.KEEP_PROB_VALUE = keepProbValues;
         this.loadModelFile(assetManager);
     }
 
@@ -59,11 +71,30 @@ public class ObjectDetectionClassifier implements Classifier {
     }
 
     @Override
-    public List<Recognition> classifyImage(long[] inputValues) {
+    public List<Recognition> classifyImage(float[] inputValues, String dir) {
         float[] results = new float[OUTPUT_SIZE];
-        this.inferenceInterface.feed(INPUT_NODE_NAME, INPUT_TENSOR_SHAPE, inputValues);
+        this.inferenceInterface.feed(INPUT_NODE_NAME, inputValues, INPUT_TENSOR_SHAPE);
+        this.inferenceInterface.feed(KEEP_PROB_NODE_NAME, KEEP_PROB_VALUE, KEEP_PROB_SHAPE);
         this.inferenceInterface.run(OUTPUT_NODES, logStats);
         this.inferenceInterface.fetch(OUTPUT_NODE_NAME, results);
+        Mat a = new Mat(500,500,1);
+        int cnt = 0;
+        for (int sv = 0; sv < 500; sv += 10) {
+            for (int sh = 0; sh < 500; sh += 20) {
+                for (int i = 0; i < 10; i++) {
+                    for (int j = 0; j < 20; j++) {
+                        if (results[cnt] > 0.5) {
+                            a.put(sv+i, sh+j, 255);
+                        } else {
+                            a.put(sv + i, sh + j, 0);
+                        }
+                    }
+                }
+                cnt++;
+            }
+
+        }
+        boolean success = Imgcodecs.imwrite(dir + "/floor.jpg", a);
         return null;
     }
 
