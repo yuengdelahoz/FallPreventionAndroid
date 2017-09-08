@@ -212,7 +212,7 @@ public class MainActivity_old extends AppCompatActivity {
                     int size = (int)img.total() * img.channels();
                     float[] imgValues = new float[size];
                     img.get(0, 0, imgValues);
-                    classifier.classifyImage(imgValues, Environment.getExternalStorageDirectory() + "/Download/");
+                    classifier.classifyImage(imgValues);
                 }
                 break;
                 default: {

@@ -6,12 +6,15 @@ import android.app.Service;
 import android.app.TaskStackBuilder;
 import android.content.Intent;
 import android.graphics.ImageFormat;
+import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.CaptureResult;
+import android.hardware.camera2.TotalCaptureResult;
 import android.media.Image;
 import android.media.ImageReader;
 import android.os.Environment;
@@ -19,6 +22,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
 import android.util.Log;
+import android.view.Surface;
 import android.widget.Toast;
 
 import org.opencv.android.BaseLoaderCallback;
@@ -66,14 +70,19 @@ public class Camera2Service extends Service {
      * and a handler to run with the new thread*/
     private static final String TAG = "Camera2Service";
     private static final int CAMERA = CameraCharacteristics.LENS_FACING_BACK;
+    /**
+     * Number of frames to wait while the camera is warming up before switching from the dummy surface
+     * to the real camera surface
+     */
+    private static final int WAIT_FRAMES = 120;
     private CameraDevice cameraDevice;
     private CameraCaptureSession session;
     private ImageReader imageReader;
     private HandlerThread mBackgroundThread;
     private Handler mBackgroundHandler;
+    private CameraCharacteristics mCharacteristics;
     public static boolean active = false;
     ImageTools mat = new ImageTools();
-    private boolean you_are_allowed_to_continue = false;
 
     private BaseLoaderCallback opencv_callback = new BaseLoaderCallback(this) {
         @Override
@@ -81,9 +90,7 @@ public class Camera2Service extends Service {
             switch (status) {
                 case LoaderCallbackInterface.SUCCESS: {
                     Log.i("OpenCVLoad", "OpenCV loaded successfully");
-                    you_are_allowed_to_continue = true;
                     Log.e(TAG,"Current thread is " + Thread.currentThread().getName());
-
                 }
                 break;
                 default: {
@@ -106,14 +113,14 @@ public class Camera2Service extends Service {
         @Override
         public void onOpened(CameraDevice camera) {
             Log.i(TAG, "onOpened");
-
             //sets the cameraDevice variable to the opened camera
             cameraDevice = camera;
-
             /*the following  gives a surface to the images captured by the camera.
-            * this is important so we can display the images later*/
+            * this is important so we can display the images later. We pass a dummy surface we use while the
+            * camera is auto-adjusting or warming up, and the read camera surface to use later */
             try {
-                cameraDevice.createCaptureSession(Arrays.asList(imageReader.getSurface()), sessionStateCallback, null);
+                //cameraDevice.createCaptureSession(Arrays.asList(imageReader.getSurface()), sessionStateCallback, null);
+                cameraDevice.createCaptureSession(Arrays.asList(mDummySurface, imageReader.getSurface()), sessionStateCallback, null);
             } catch (CameraAccessException e) {
                 Log.e(TAG, e.getMessage());
                 stopBackgroundThread();
@@ -134,18 +141,27 @@ public class Camera2Service extends Service {
         * device can be in, similar to the states of an app*/
     };
 
+    // When the Camera2Service service is started, it used to instantly make requests to the phone
+    // camera. In some devices the camera takes a little to "warm up" or autocalibrate, and the output
+    // pictures would be too dark and out of focus. For this reason, while the camera is auto-adjusting,
+    // we make the requests to a dummy surface and these requests will not generate pictures. After WAITING_FRAMES
+    // frames have been requested, we change the surface used in the capture session to use the real camera and
+    // start saving the real pictures.
+    private SurfaceTexture mDummyPreview = new SurfaceTexture(1);
+    private Surface mDummySurface = new Surface(mDummyPreview);
+
     /*the following is a callback object about the state of the camera capture session*/
     private CameraCaptureSession.StateCallback sessionStateCallback = new CameraCaptureSession.StateCallback() {
         @Override
         public void onConfigured(CameraCaptureSession session) {
             Log.i(TAG, "onConfigured");
-
             /*the following creates a session for the camera to
              * repeatedly make requests to capture an image (will go until
              * stopped by the user or app crashes) */
             Camera2Service.this.session = session;
             try {
-                session.setRepeatingRequest(createCaptureRequest(), null, null);
+                // In the beginning, the capture request works with a dummy surface while the real camera is adjusting
+                session.setRepeatingRequest(createCaptureRequest(mDummySurface), mCaptureCallback, mBackgroundHandler);
             } catch (CameraAccessException e) {
                 Log.e(TAG, e.getMessage());
             }
@@ -163,21 +179,16 @@ public class Camera2Service extends Service {
 
         @Override
         public void onImageAvailable(ImageReader reader) {
-
             /* the following variables are used to convert the data we get to bytes,
             * and re-construct them to finally create and save an image file*/
             Image img;
-            File imgFile;
             ByteBuffer buffer;
             byte[] bytes;
-
             //pretty self explanatory. like, c'mon now. read the line. lazy...
             img = reader.acquireLatestImage();
-
             /*the full code below would also have "if-else" or "else" statements
             * to check for other types of retrieved images/files */
             if (img.getFormat() == ImageFormat.JPEG) {
-
                 //check if we have external storage to write to. if we do, save acquired image
                 if (isExternalStorageWritable())
                 {
@@ -185,7 +196,6 @@ public class Camera2Service extends Service {
                     it up for a JPEG assignment*/
                     //imgFile = CreateJPEG();
                     try {
-
                     /*bytebuffer is a class that allows us to read/write bytes
                     * here it is used with "Save(... , ...)" to assign these
                     * collected bytes from the image to the created file from "CreateJpeg()"*/
@@ -200,11 +210,8 @@ public class Camera2Service extends Service {
                         MatOfByte m = new MatOfByte(bytes);
                         imgMat = imdecode(m, IMREAD_UNCHANGED);
 
-
                         mat.SaveImage(imgMat,System.currentTimeMillis());
                         img.close();
-
-
                     } catch (Exception e) {
                         Log.i("Exception e", "ImageFormat.JPEG,,,,,,,,Exception eException e");
                         e.getStackTrace();
@@ -219,7 +226,6 @@ public class Camera2Service extends Service {
     @Override
     public void onCreate() {
         Log.i(TAG, "onCreate from camera service");
-
         super.onCreate();
         //intent to be used with the "main" class of the app
         Intent mainActivity = new Intent(this, Camera_Activity.class);
@@ -234,24 +240,18 @@ public class Camera2Service extends Service {
         startForeground(41413, mBuilder.build());
     }
 
-
-
-
     /**
      * Return the Camera Id which matches the field CAMERA.
      */
     public String getCamera(CameraManager manager) {
         Log.i(TAG, "getCamera from camera service");
-
         // getCameraIdList() returns a list of currently connected camera devices
         try {
             for (String cameraId : manager.getCameraIdList()) {
-
                 //getCameraCharacteristics() presents the capabilities of the selected camera
-                CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
-                int cOrientation = characteristics.get(CameraCharacteristics.LENS_FACING);
+                mCharacteristics = manager.getCameraCharacteristics(cameraId);
+                int cOrientation = mCharacteristics.get(CameraCharacteristics.LENS_FACING);
                 Log.i("camera2id", cameraId);
-
                 if (cOrientation == CAMERA) {
                     return cameraId;
                 }
@@ -262,14 +262,12 @@ public class Camera2Service extends Service {
         return null;
     }
 
-
     /* the following starts the intent for working with the main activity. if everything
     * gets setup as it should, our camera will start reading images at the below specified
     * desired format, size, and repeat interval. */
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.e(TAG,"Current thread is " + Thread.currentThread().getName());
         Log.i(TAG, "onStartCommand from camera service");
-
         if (!OpenCVLoader.initDebug()) {
             Log.d("OpenCV", "Internal OpenCV library not found. Using OpenCV Manager for initialization");
             OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_2_0, this, opencv_callback);
@@ -277,24 +275,19 @@ public class Camera2Service extends Service {
             Log.d("OpenCV", "OpenCV library found inside package. Using it!");
             opencv_callback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
         }
-
-        Log.e(TAG,"I am here");
-
         //background thread started, so we do not block ui thread
         startBackgroundThread();
         active = true;
         Toast.makeText(this, "service starting", Toast.LENGTH_SHORT).show();
         CameraManager manager = (CameraManager) getSystemService(CAMERA_SERVICE);
-
         try {
             imageReader = ImageReader.newInstance(500, 500, ImageFormat.JPEG, 2);
-            imageReader.setOnImageAvailableListener(onImageAvailableListener, null);
+            imageReader.setOnImageAvailableListener(onImageAvailableListener, mBackgroundHandler);
             Log.i(TAG, "onStartCommand");
             if (!mCameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
                 throw new RuntimeException("Time out waiting to lock camera opening.");
             }
             mCameraOpenCloseLock.release();
-
             /* this shows error because it is looking for a request made to the
             * user to allow access of the camera. this check is done in the main activity file,
             * so we can ignore the presented error.
@@ -311,7 +304,6 @@ public class Camera2Service extends Service {
         return super.onStartCommand(intent, flags, startId);
     }
 
-
     //state of the app if it is closed or has crashed
     @Override
     public void onDestroy() {
@@ -319,14 +311,11 @@ public class Camera2Service extends Service {
 
     }
 
-
-
     //@Nullable
     @Override
     public IBinder onBind(Intent intent) {
         return null;
     }
-
 
 //    public File getAlbumStorageDir(String albumName) {
 //        // Path is Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
@@ -347,20 +336,54 @@ public class Camera2Service extends Service {
         return false;
     }
 
+    /**
+     * The capture callback has methods that are called when a capture has been progressed and when a
+     * capture has been completed. In this case, the callback is used to keep track of the number of
+     * frames made initially to the dummy surface while the camera is warming up or auto-adjusting, and
+     * after a number of frames have been completed and the camera is ready, the surface used in the
+     * capture session is changed from the dummy surface to the real camera surface.
+     */
+    private CameraCaptureSession.CaptureCallback mCaptureCallback
+            = new CameraCaptureSession.CaptureCallback() {
+        private int m = 0;
+        @Override
+        public void onCaptureProgressed( CameraCaptureSession session,
+                                         CaptureRequest request,
+                                         CaptureResult partialResult) {
+            Log.i(TAG, "CAPTURE PROGRESSED: " + m++);
+        }
+
+        @Override
+        public void onCaptureCompleted( CameraCaptureSession session,
+                                        CaptureRequest request,
+                                        TotalCaptureResult result) {
+            Log.i(TAG, "CAPTURE COMPLETED: " + m++);
+            if (m == WAIT_FRAMES) {
+                try {
+                    // Change the surface of the request session to use the real camera surface and start saving the real pictures
+                    Camera2Service.this.session.setRepeatingRequest(createCaptureRequest(imageReader.getSurface()), null, null);
+                } catch (CameraAccessException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    };
 
     //a package of setting and outputs needed to capture an image from the camera device
-    private CaptureRequest createCaptureRequest() {
+    private CaptureRequest createCaptureRequest(Surface surface) {
         try {
             //"builds" a request to capture an image
             CaptureRequest.Builder builder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
             /* from the built request to capture an image, here we get the surface
              to be used to project the image on*/
-            builder.addTarget(imageReader.getSurface());
-
+            //builder.addTarget(imageReader.getSurface());
+            builder.addTarget(surface);
             /** this needs to be fixed*/
-            // builder.set(CaptureRequest.JPEG_ORIENTATION, characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION));
-
-
+            builder.set(CaptureRequest.JPEG_ORIENTATION, mCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION));
+            builder.set(CaptureRequest.CONTROL_AF_MODE,
+                    CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+            builder.set(CaptureRequest.CONTROL_AE_MODE,
+                    CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
             //returns the "build" request made
             return builder.build();
         } catch (CameraAccessException e) {
@@ -387,7 +410,6 @@ public class Camera2Service extends Service {
             e.printStackTrace();
         }
     }
-
 
     /**
      * Closes the current {@link CameraDevice}.
@@ -420,7 +442,5 @@ public class Camera2Service extends Service {
             active = false;
             Log.i(TAG,"Closed Camera");
         }
-
     }
-
 }

@@ -9,11 +9,13 @@ import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
 
 /**
  * Created by raulestrada on 8/27/17.
+ * This class represents a classifier that takes an input image and produces an array of superpixels.
+ * The computational graph of the model has input, output and keep_prob nodes whose data needs to be
+ * provided in order to perform the inference.
  */
 
 public class ObjectDetectionClassifier implements Classifier {
     private static final String TF_INFERENCE_LIBRARY_NAME = "tensorflow_inference";
-
     // Path to frozen model
     private final String MODEL_FILE;
     // Names of nodes in the computational graph
@@ -26,7 +28,6 @@ public class ObjectDetectionClassifier implements Classifier {
     private final long[] KEEP_PROB_SHAPE;
     // Shape of input tensor
     private final long[] INPUT_TENSOR_SHAPE;
-
     // TensorFlowInference object used to make inferences on the graph of the loaded model
     private TensorFlowInferenceInterface inferenceInterface;
     private boolean logStats = false;
@@ -55,7 +56,7 @@ public class ObjectDetectionClassifier implements Classifier {
         this.INPUT_TENSOR_SHAPE = inputTensorShape;
         this.KEEP_PROB_SHAPE = keepProbShape;
         this.KEEP_PROB_VALUE = keepProbValues;
-        this.loadModelFile(assetManager);
+        this.loadModelFile(assetManager); //Loads the frozen model from the .pb file in the assets folder
     }
 
     private void loadModelFile(AssetManager assetManager) {
@@ -63,44 +64,44 @@ public class ObjectDetectionClassifier implements Classifier {
         Log.i("TF-ANDR WATER DETECTION", "NN model file loaded");
     }
 
+    /**
+     * Calls the inference on the image whose values are passed as input values, and returns the
+     * superpixels produced by the NN model.
+     * @param inputValues - The pixel values of the input image
+     * @return - The superpixels produced by the inference of the NN model
+     */
     @Override
-    public float[] classifyImage(float[] inputValues, String dir) {
-        float[] results = new float[OUTPUT_SIZE];
+    public float[] classifyImage(float[] inputValues) {
+        float[] results = new float[OUTPUT_SIZE]; //This array will contain the results produced by the neural network
+        // We need to feed the input and keep_prob data just like we would in Python
         this.inferenceInterface.feed(INPUT_NODE_NAME, inputValues, INPUT_TENSOR_SHAPE);
         this.inferenceInterface.feed(KEEP_PROB_NODE_NAME, KEEP_PROB_VALUE, KEEP_PROB_SHAPE);
         this.inferenceInterface.run(OUTPUT_NODES, logStats);
-        this.inferenceInterface.fetch(OUTPUT_NODE_NAME, results);
-        Mat a = new Mat(500,500,1);
-        int cnt = 0;
-        for (int sv = 0; sv < 500; sv += 10) {
-            for (int sh = 0; sh < 500; sh += 20) {
-                for (int i = 0; i < 10; i++) {
-                    for (int j = 0; j < 20; j++) {
-                        if (results[cnt] > 0.5) {
-                            a.put(sv+i, sh+j, 255);
-                        } else {
-                            a.put(sv + i, sh + j, 0);
-                        }
-                    }
-                }
-                cnt++;
-            }
-
-        }
-        boolean success = Imgcodecs.imwrite(dir + "/floor.jpg", a);
+        this.inferenceInterface.fetch(OUTPUT_NODE_NAME, results); //Fetch the output values and store it in the results array
         return results;
     }
 
+    /**
+     * Enables/Disables the logging of statisitics. By default it's set to false
+     * @param debug - True if stat logging should be enabled. False otherwise
+     */
     @Override
     public void enableStatLogging(boolean debug) {
         this.logStats = debug;
     }
 
+    /**
+     * Gets and returns the string with the stats returned by the NN model
+     * @return - The string with the stats returned by the model
+     */
     @Override
     public String getStatString() {
         return this.inferenceInterface.getStatString();
     }
 
+    /**
+     * Closes the session, feeds and fetches used by the model inference.
+     */
     @Override
     public void close() {
         this.inferenceInterface.close();
