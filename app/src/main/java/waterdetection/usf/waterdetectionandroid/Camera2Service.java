@@ -31,6 +31,10 @@ import org.opencv.android.OpenCVLoader;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
+import org.opencv.core.Rect;
+import org.opencv.core.Scalar;
+import org.opencv.core.Size;
+import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
 import java.nio.ByteBuffer;
@@ -39,8 +43,16 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 
+import waterdetection.usf.waterdetectionandroid.tfclassification.Classifier;
+import waterdetection.usf.waterdetectionandroid.tfclassification.ClassifierFactory;
+
+import static org.opencv.core.CvType.CV_32F;
+import static org.opencv.core.CvType.CV_8UC3;
+import static org.opencv.imgcodecs.Imgcodecs.IMREAD_COLOR;
 import static org.opencv.imgcodecs.Imgcodecs.IMREAD_UNCHANGED;
 import static org.opencv.imgcodecs.Imgcodecs.imdecode;
+import static org.opencv.core.Core.add;
+import static org.opencv.core.Core.multiply;
 
 
 /**
@@ -83,6 +95,7 @@ public class Camera2Service extends Service {
     private CameraCharacteristics mCharacteristics;
     public static boolean active = false;
     ImageTools mat = new ImageTools();
+    private Classifier classifier;
 
     private BaseLoaderCallback opencv_callback = new BaseLoaderCallback(this) {
         @Override
@@ -202,18 +215,35 @@ public class Camera2Service extends Service {
                         buffer = img.getPlanes()[0].getBuffer();
                         int h = img.getHeight();
                         int w = img.getWidth();
-                        Mat imgMat = new Mat(w,h, CvType.CV_8UC3);
+                        Mat imgMat = new Mat(w,h, CvType.CV_32FC3);
 
                         bytes = new byte[buffer.remaining()];
                         buffer.get(bytes);
-
+                        // Obtain a float array with the values of the image captured. The classifier
+                        // uses this float array to perform the inference
                         MatOfByte m = new MatOfByte(bytes);
-                        imgMat = imdecode(m, IMREAD_UNCHANGED);
-
-                        mat.SaveImage(imgMat,System.currentTimeMillis());
+                        imgMat = imdecode(m, IMREAD_COLOR);
+                        // We need to resize the image because the floor detection model expects an input
+                        // image with dimensions 500x500
+                        Size szResized = new Size(500,500);
+                        Mat mSource = imgMat;
+                        Mat mResised = new Mat();
+                        Imgproc.resize(mSource, mResised, szResized,0,0, Imgproc.INTER_LINEAR);
+                        Mat im = new Mat(500,500,3);
+                        // We copy the mat to a new one where the data type is CV_32FC3 because it is
+                        // the type expected by the classifier and otherwise it would raise an error.
+                        mResised.assignTo(im, CvType.CV_32FC3);
+                        int size = (int)im.total() * im.channels();
+                        float[] imgValues = new float[size];
+                        // Extract the values of the image to a float array since the classifier expects
+                        // its input to be a float array
+                        im.get(0, 0, imgValues);
+                        float[] superpixels = classifier.classifyImage(imgValues); //Perform the inference on the input image
+                        Mat fin = paintOriginalImage(superpixels, mResised); //Paint the results on the original image
+                        mat.SaveImage(fin,System.currentTimeMillis()); //Save the output image
                         img.close();
                     } catch (Exception e) {
-                        Log.i("Exception e", "ImageFormat.JPEG,,,,,,,,Exception eException e");
+                        Log.i("Exception e", "ImageFormat.JPEG,,,,,,," + e.getMessage());
                         e.getStackTrace();
                     }
                 }
@@ -221,6 +251,43 @@ public class Camera2Service extends Service {
         }
     };
 
+    /**
+     * Method that paints the results of the floor detection model on top of the original input image
+     * When a superpixel is classified as "floor", then all the pixels in the image that belong to that
+     * superpixel are colored black, so that in the end the returned image is the original image with
+     * all the areas identified as floor are colored black.
+     * @param superpixels - The 1250 vector with the output of the floor detection model
+     * @param originalImage - The original resized image (500x500)
+     * @return - A copy of the original image where all pixels classified as floor are colored black
+     */
+    private Mat paintOriginalImage(float[] superpixels, Mat originalImage) {
+        int height = originalImage.height();
+        int width = originalImage.width();
+        Mat or = new Mat(500, 500, CV_32F);
+        originalImage.assignTo(or);
+        int superpixel = 0;
+        for (int sv = 0; sv < height; sv += 10) { // 50 superpixels in the height direction
+            for (int sh = 0; sh < width; sh += 20) { // 25 superpixels in the width direction
+                Log.i("RAUL", "Counter superp: " + superpixel);
+                if (superpixels[superpixel] > 0.5) {
+                    Log.i("RAUL FLOOR", "CLASSIFIED AS FLOOR");
+                    Rect roi = new Rect(sh, sv, 20, 10);
+                    /**Mat red = new Mat(10, 20, CvType.CV_8UC3, new Scalar(122, 0, 0));
+                     Mat oSubOrig = orig.submat(sv, sv+10, sh, sh+20);
+                     Mat pointFive = new Mat(10, 20, CvType.CV_8UC3, new Scalar(0.5));
+                     Mat subOrig = oSubOrig.mul(pointFive);
+                     Mat newSub = new Mat(10, 20, CvType.CV_8UC3, new Scalar(255));
+                     add(subOrig, red, newSub);
+                     newSub.copyTo(orig.submat(roi));*/
+                    Mat black = new Mat(10, 20, CV_32F);
+                    or.submat(roi).setTo(new Scalar(0));
+                    //black.copyTo(or.submat(roi));
+                }
+                superpixel++;
+            }
+        }
+        return or;
+    }
 
     //state of the app once tapped on
     @Override
@@ -237,6 +304,7 @@ public class Camera2Service extends Service {
         stackBuilder.addNextIntent(mainActivity);
         PendingIntent pendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
         mBuilder.setContentIntent(pendingIntent);
+        this.classifier = ClassifierFactory.createFloorDetectionClassifier(getAssets());
         startForeground(41413, mBuilder.build());
     }
 

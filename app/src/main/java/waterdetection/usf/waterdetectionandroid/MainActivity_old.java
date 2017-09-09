@@ -25,6 +25,8 @@ import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.Rect;
+import org.opencv.core.Scalar;
 import org.opencv.imgcodecs.Imgcodecs;
 
 import java.io.File;
@@ -35,8 +37,12 @@ import java.util.logging.Handler;
 import waterdetection.usf.waterdetectionandroid.tfclassification.Classifier;
 import waterdetection.usf.waterdetectionandroid.tfclassification.ClassifierFactory;
 
+import static org.opencv.core.Core.add;
+import static org.opencv.core.Core.multiply;
+import static org.opencv.core.CvType.CV_8UC3;
 import static org.opencv.imgcodecs.Imgcodecs.IMREAD_COLOR;
 import static org.opencv.imgcodecs.Imgcodecs.imread;
+import static org.opencv.imgcodecs.Imgcodecs.imwrite;
 
 public class MainActivity_old extends AppCompatActivity {
     private boolean canWrite = false, useCamera = false, canRead = false;
@@ -208,11 +214,13 @@ public class MainActivity_old extends AppCompatActivity {
 
                     Mat orig = imread(f.getAbsolutePath(), IMREAD_COLOR);
                     Mat img = new Mat(500,500,3);
-                    orig.assignTo(img, CvType.CV_32F);
+                    orig.assignTo(img, CvType.CV_32FC3);
                     int size = (int)img.total() * img.channels();
                     float[] imgValues = new float[size];
                     img.get(0, 0, imgValues);
-                    classifier.classifyImage(imgValues);
+                    float[] superpixels = classifier.classifyImage(imgValues);
+                    Mat fin = paintOriginalImage(superpixels, img);
+                    imwrite(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/floor.jpg", fin);
                 }
                 break;
                 default: {
@@ -222,6 +230,32 @@ public class MainActivity_old extends AppCompatActivity {
             }
         }
     };
+
+    private Mat paintOriginalImage(float[] superpixels, Mat originalImage) {
+        int height = originalImage.height();
+        int width = originalImage.width();
+        Mat orig = new Mat(height, width, CvType.CV_8UC3);
+        originalImage.assignTo(orig, CV_8UC3);
+        int superpixel = 0;
+        for (int sv = 0; sv < height; sv += 10) { // 50 superpixels in the height direction
+            for (int sh = 0; sh < width; sh += 20) { // 25 superpixels in the width direction
+                if (superpixels[superpixel] > 0.5) {
+                    Rect roi = new Rect(sh, sv, 20, 10);
+                    /**Mat red = new Mat(10, 20, CvType.CV_8UC3, new Scalar(122, 0, 0));
+                    Mat oSubOrig = orig.submat(sv, sv+10, sh, sh+20);
+                    Mat pointFive = new Mat(10, 20, CvType.CV_8UC3, new Scalar(0.5));
+                    Mat subOrig = oSubOrig.mul(pointFive);
+                    Mat newSub = new Mat(10, 20, CvType.CV_8UC3, new Scalar(255));
+                    add(subOrig, red, newSub);
+                    newSub.copyTo(orig.submat(roi));*/
+                    Mat black = new Mat(10, 20, CV_8UC3);
+                    black.copyTo(orig.submat(roi));
+                }
+                superpixel++;
+            }
+        }
+        return orig;
+    }
 
     /**
      * A native method that is implemented by the 'native-lib' native library,
