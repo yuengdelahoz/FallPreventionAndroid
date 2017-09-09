@@ -47,6 +47,7 @@ import waterdetection.usf.waterdetectionandroid.tfclassification.Classifier;
 import waterdetection.usf.waterdetectionandroid.tfclassification.ClassifierFactory;
 
 import static org.opencv.core.CvType.CV_32F;
+import static org.opencv.core.CvType.CV_32FC3;
 import static org.opencv.core.CvType.CV_8UC3;
 import static org.opencv.imgcodecs.Imgcodecs.IMREAD_COLOR;
 import static org.opencv.imgcodecs.Imgcodecs.IMREAD_UNCHANGED;
@@ -263,25 +264,17 @@ public class Camera2Service extends Service {
     private Mat paintOriginalImage(float[] superpixels, Mat originalImage) {
         int height = originalImage.height();
         int width = originalImage.width();
-        Mat or = new Mat(500, 500, CV_32F);
-        originalImage.assignTo(or);
+        Mat or = new Mat(500, 500, CV_32FC3);
+        originalImage.convertTo(or, CV_32FC3);
         int superpixel = 0;
         for (int sv = 0; sv < height; sv += 10) { // 50 superpixels in the height direction
             for (int sh = 0; sh < width; sh += 20) { // 25 superpixels in the width direction
-                Log.i("RAUL", "Counter superp: " + superpixel);
                 if (superpixels[superpixel] > 0.5) {
-                    Log.i("RAUL FLOOR", "CLASSIFIED AS FLOOR");
                     Rect roi = new Rect(sh, sv, 20, 10);
-                    /**Mat red = new Mat(10, 20, CvType.CV_8UC3, new Scalar(122, 0, 0));
-                     Mat oSubOrig = orig.submat(sv, sv+10, sh, sh+20);
-                     Mat pointFive = new Mat(10, 20, CvType.CV_8UC3, new Scalar(0.5));
-                     Mat subOrig = oSubOrig.mul(pointFive);
-                     Mat newSub = new Mat(10, 20, CvType.CV_8UC3, new Scalar(255));
-                     add(subOrig, red, newSub);
-                     newSub.copyTo(orig.submat(roi));*/
-                    Mat black = new Mat(10, 20, CV_32F);
-                    or.submat(roi).setTo(new Scalar(0));
-                    //black.copyTo(or.submat(roi));
+                    Mat oSubOrig = or.submat(sv, sv+10, sh, sh+20);
+                    Mat mask = new Mat(10, 20, CV_32FC3, new Scalar(0, 0, 1));
+                    Mat subOrig = oSubOrig.mul(mask);
+                    subOrig.copyTo(or.submat(roi));
                 }
                 superpixel++;
             }
