@@ -10,6 +10,8 @@ public class ClassifierFactory {
     // Name of the frozen model files in the Android Assets folder
     private final static String FLOOR_MODEL_FILE = "file:///android_asset/floor_model.pb";
     private final static String WATER_MODEL_FILE = "file:///android_asset/water_model_original.pb";
+    private final static String WATER_FLOOR_OP1_MODEL_FILE = "file:///android_asset/water_model_opt_1.pb";
+    private final static String WATER_FLOOR_OP2_MODEL_FILE = "file:///android_asset/water_model_opt_2.pb";
     // Names of the different tensor nodes in the computational graph
     private static final String INPUT_NODE_NAME = "input_images:0";
     private static final String OUTPUT_NODE_NAME = "superpixels:0";
@@ -22,6 +24,7 @@ public class ClassifierFactory {
     private static final long[] KEEP_PROB_TENSOR_SHAPE = {1};
     private static final long[] FLOOR_INPUT_TENSOR_SHAPE = {1,500,500,3};
     private static final long[] WATER_INPUT_TENSOR_SHAPE = {1,500,500,4};
+    private static final long[] WATER_FLOOR_OP1_TENSOR_SHAPE = {1, 500, 500, 5};
 
     /**
      * Creates and returns a floor detection NN model loading such model from the frozen .pb file in the Assets folder
@@ -41,6 +44,18 @@ public class ClassifierFactory {
      */
     public static Classifier createWaterDetectionClassifier(AssetManager assetManager) {
         return new ObjectDetectionClassifier(WATER_MODEL_FILE, INPUT_NODE_NAME, OUTPUT_NODE_NAME,
+                OUTPUT_NODES, OUTPUT_SIZE, KEEP_PROB_NODE_NAME, KEEP_PROB_VALUE, KEEP_PROB_TENSOR_SHAPE,
+                WATER_INPUT_TENSOR_SHAPE, assetManager);
+    }
+
+    public static Classifier createWaterFloorOp1DetectionClassifier(AssetManager assetManager) {
+        return new ObjectDetectionClassifier(WATER_FLOOR_OP1_MODEL_FILE, INPUT_NODE_NAME, OUTPUT_NODE_NAME,
+                OUTPUT_NODES, OUTPUT_SIZE, KEEP_PROB_NODE_NAME, KEEP_PROB_VALUE, KEEP_PROB_TENSOR_SHAPE,
+                WATER_FLOOR_OP1_TENSOR_SHAPE, assetManager);
+    }
+
+    public static Classifier createWaterFloorOp2DetectionClassifier(AssetManager assetManager) {
+        return new ObjectDetectionClassifier(WATER_FLOOR_OP2_MODEL_FILE, INPUT_NODE_NAME, OUTPUT_NODE_NAME,
                 OUTPUT_NODES, OUTPUT_SIZE, KEEP_PROB_NODE_NAME, KEEP_PROB_VALUE, KEEP_PROB_TENSOR_SHAPE,
                 WATER_INPUT_TENSOR_SHAPE, assetManager);
     }

@@ -8,7 +8,6 @@ import org.opencv.imgproc.Imgproc;
 
 import static org.opencv.core.CvType.CV_32F;
 import static org.opencv.core.CvType.CV_32FC3;
-import static org.opencv.core.CvType.CV_8U;
 
 public class ImgUtils {
     private final static int LAPLACIAN_K_SIZE = 3;
@@ -42,6 +41,23 @@ public class ImgUtils {
             }
         }
         return or;
+    }
+
+    public Mat paintBlackWhiteResults(float[] superpixels, Mat originalImage) {
+        int height = originalImage.height();
+        int width = originalImage.width();
+        Mat result = new Mat(500, 500, CV_32F);
+        int superpixel = 0;
+        for (int sv = 0; sv < height; sv += 10) { // 50 superpixels in the height direction
+            for (int sh = 0; sh < width; sh += 20) { // 25 superpixels in the width direction
+                if (superpixels[superpixel] > 0.5) {
+                    Rect roi = new Rect(sh, sv, 20, 10);
+                    result.submat(roi).setTo(new Scalar(255));
+                }
+                superpixel++;
+            }
+        }
+        return result;
     }
 
     public Mat createLaplacianImage(Mat originalImage) {

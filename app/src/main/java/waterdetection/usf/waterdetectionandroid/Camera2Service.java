@@ -98,7 +98,7 @@ public class Camera2Service extends Service {
         stackBuilder.addNextIntent(mainActivity);
         PendingIntent pendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
         mBuilder.setContentIntent(pendingIntent);
-        this.onImageAvailableListener =  new ImageAvailableCallback(DetectorFactory.createWaterDetector(getAssets()));
+        this.onImageAvailableListener =  new ImageAvailableCallback(DetectorFactory.createWaterFloorOp1Detector(getAssets()));
         startForeground(41413, mBuilder.build());
     }
 

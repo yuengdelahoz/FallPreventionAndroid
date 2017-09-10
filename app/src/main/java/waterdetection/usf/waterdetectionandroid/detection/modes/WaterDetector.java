@@ -1,19 +1,15 @@
 package waterdetection.usf.waterdetectionandroid.detection.modes;
 
 import android.content.res.AssetManager;
-import android.util.Log;
 
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import waterdetection.usf.waterdetectionandroid.tfclassification.Classifier;
 import waterdetection.usf.waterdetectionandroid.tfclassification.ClassifierFactory;
-
-import static org.opencv.core.CvType.CV_32FC4;
 
 class WaterDetector implements Detector {
     private Classifier classifier;
