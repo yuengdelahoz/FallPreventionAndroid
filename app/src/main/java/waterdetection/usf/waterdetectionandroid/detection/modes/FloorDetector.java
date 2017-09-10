@@ -19,7 +19,7 @@ class FloorDetector implements Detector {
     public Mat performDetection(Mat originalImage) {
         float[] inputValues = imgUtils.convertMatToFloatArr(originalImage);
         float[] superpixels = floorClassifier.classifyImage(inputValues); //Perform the inference on the input image
-        Mat finalImage = imgUtils.paintOriginalImage(superpixels, originalImage);
+        Mat finalImage = imgUtils.paintOriginalImage(superpixels, originalImage, false);
         return finalImage;
     }
 }

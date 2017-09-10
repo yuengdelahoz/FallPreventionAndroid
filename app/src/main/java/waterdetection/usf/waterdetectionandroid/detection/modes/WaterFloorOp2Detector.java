@@ -11,31 +11,30 @@ import java.util.List;
 import waterdetection.usf.waterdetectionandroid.tfclassification.Classifier;
 import waterdetection.usf.waterdetectionandroid.tfclassification.ClassifierFactory;
 
-class WaterFloorOp1Detector implements Detector {
+class WaterFloorOp2Detector implements Detector {
     private Classifier waterClassifier;
     private Classifier floorClassifier;
     private ImgUtils imgUtils = new ImgUtils();
 
-    public WaterFloorOp1Detector(AssetManager assetManager) {
-        this.waterClassifier = ClassifierFactory.createWaterFloorOp1DetectionClassifier(assetManager);
+    public WaterFloorOp2Detector(AssetManager assetManager) {
         this.floorClassifier = ClassifierFactory.createFloorDetectionClassifier(assetManager);
+        this.waterClassifier = ClassifierFactory.createWaterFloorOp2DetectionClassifier(assetManager);
     }
 
     @Override
     public Mat performDetection(Mat originalImage) {
         float[] floorInputValues = imgUtils.convertMatToFloatArr(originalImage);
         float[] floorSuperpixels = floorClassifier.classifyImage(floorInputValues); //Perform the inference on the input image
-        Mat floorImage = imgUtils.paintBlackWhiteResults(floorSuperpixels, originalImage);
+        Mat floorImage = imgUtils.paintOriginalImage(floorSuperpixels, originalImage, true);
         Mat edgeImage = imgUtils.createLaplacianImage(originalImage);
         List<Mat> mats = new ArrayList<Mat>();
-        mats.add(originalImage);
-        mats.add(edgeImage);
         mats.add(floorImage);
-        Mat inputImage = new Mat();
-        Core.merge(mats, inputImage);
-        float[] waterInputValues = imgUtils.convertMatToFloatArr(inputImage);
+        mats.add(edgeImage);
+        Mat waterInputImage = new Mat();
+        Core.merge(mats, waterInputImage);
+        float[] waterInputValues = imgUtils.convertMatToFloatArr(waterInputImage);
         float[] waterSuperpixels = waterClassifier.classifyImage(waterInputValues);
-        Mat waterResImage = imgUtils.paintOriginalImage(waterSuperpixels, originalImage, false);
-        return waterResImage;
+        Mat waterImage = imgUtils.paintOriginalImage(waterSuperpixels, originalImage, false);
+        return waterImage;
     }
 }

@@ -29,7 +29,7 @@ class WaterDetector implements Detector {
         Core.merge(mats, input);
         float[] inputValues = imgUtils.convertMatToFloatArr(input);
         float[] superpixels = classifier.classifyImage(inputValues); //Perform the inference on the input image
-        Mat finalImage = imgUtils.paintOriginalImage(superpixels, originalImage);
+        Mat finalImage = imgUtils.paintOriginalImage(superpixels, originalImage, false);
         return finalImage;
     }
 }

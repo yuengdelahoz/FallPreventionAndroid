@@ -16,4 +16,8 @@ public class DetectorFactory {
         return new WaterFloorOp1Detector(assetManager);
     }
 
+    public static Detector createWaterFloorOp2Detector(AssetManager assetManager) {
+        return new WaterFloorOp2Detector(assetManager);
+    }
+
 }

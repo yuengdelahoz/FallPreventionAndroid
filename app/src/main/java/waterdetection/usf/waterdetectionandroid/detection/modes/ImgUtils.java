@@ -22,7 +22,7 @@ public class ImgUtils {
      * @param originalImage - The original resized image (500x500)
      * @return - A copy of the original image where all pixels classified as floor are colored black
      */
-    public Mat paintOriginalImage(float[] superpixels, Mat originalImage) {
+    public Mat paintOriginalImage(float[] superpixels, Mat originalImage, boolean obscure) {
         int height = originalImage.height();
         int width = originalImage.width();
         Mat or = new Mat(500, 500, CV_32FC3);
@@ -30,12 +30,14 @@ public class ImgUtils {
         int superpixel = 0;
         for (int sv = 0; sv < height; sv += 10) { // 50 superpixels in the height direction
             for (int sh = 0; sh < width; sh += 20) { // 25 superpixels in the width direction
-                if (superpixels[superpixel] > 0.5) {
-                    Rect roi = new Rect(sh, sv, 20, 10);
+                Rect roi = new Rect(sh, sv, 20, 10);
+                if (superpixels[superpixel] > 0.5 && !obscure) {
                     Mat oSubOrig = or.submat(sv, sv+10, sh, sh+20);
                     Mat mask = new Mat(10, 20, CV_32FC3, new Scalar(0, 0, 1));
                     Mat subOrig = oSubOrig.mul(mask);
                     subOrig.copyTo(or.submat(roi));
+                } else if (superpixels[superpixel] > 0.5) {
+                    or.submat(roi).setTo(new Scalar(0, 0, 0));
                 }
                 superpixel++;
             }
