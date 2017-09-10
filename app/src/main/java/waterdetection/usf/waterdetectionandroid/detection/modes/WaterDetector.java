@@ -3,10 +3,17 @@ package waterdetection.usf.waterdetectionandroid.detection.modes;
 import android.content.res.AssetManager;
 import android.util.Log;
 
+import org.opencv.core.Core;
 import org.opencv.core.Mat;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import waterdetection.usf.waterdetectionandroid.tfclassification.Classifier;
 import waterdetection.usf.waterdetectionandroid.tfclassification.ClassifierFactory;
+
+import static org.opencv.core.CvType.CV_32FC4;
 
 class WaterDetector implements Detector {
     private Classifier classifier;
@@ -19,7 +26,14 @@ class WaterDetector implements Detector {
     @Override
     public Mat performDetection(Mat originalImage) {
         Mat edgeImage = imgUtils.createLaplacianImage(originalImage);
-        Log.i("EDGE IMAGE", "Size: " + edgeImage.width() + ", " + edgeImage.height() + ", " + edgeImage.channels() + ". Type: " + edgeImage.type());
-        return edgeImage;
+        List<Mat> mats = new ArrayList<>();
+        mats.add(originalImage);
+        mats.add(edgeImage);
+        Mat input = new Mat();
+        Core.merge(mats, input);
+        float[] inputValues = imgUtils.convertMatToFloatArr(input);
+        float[] superpixels = classifier.classifyImage(inputValues); //Perform the inference on the input image
+        Mat finalImage = imgUtils.paintOriginalImage(superpixels, originalImage);
+        return finalImage;
     }
 }

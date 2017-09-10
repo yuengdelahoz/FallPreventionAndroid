@@ -6,7 +6,9 @@ import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
+import static org.opencv.core.CvType.CV_32F;
 import static org.opencv.core.CvType.CV_32FC3;
+import static org.opencv.core.CvType.CV_8U;
 
 public class ImgUtils {
     private final static int LAPLACIAN_K_SIZE = 3;
@@ -43,10 +45,12 @@ public class ImgUtils {
     }
 
     public Mat createLaplacianImage(Mat originalImage) {
-        Mat res = new Mat(500, 500, CvType.CV_32FC3);
+        Mat gradientImg = new Mat(500, 500, CvType.CV_32FC3);
         Mat or = new Mat(500, 500, CV_32FC3);
+        Mat res = new Mat(500, 500, CV_32F);
         originalImage.convertTo(or, CV_32FC3);
-        Imgproc.Laplacian(or, res, CvType.CV_32FC3, LAPLACIAN_K_SIZE, LAPLACIAN_SCALE, LAPLACIAN_DELTA);
+        Imgproc.Laplacian(or, gradientImg, CvType.CV_32FC3, LAPLACIAN_K_SIZE, LAPLACIAN_SCALE, LAPLACIAN_DELTA);
+        Imgproc.cvtColor(gradientImg, res, Imgproc.COLOR_BGR2GRAY);
         return res;
     }
 
