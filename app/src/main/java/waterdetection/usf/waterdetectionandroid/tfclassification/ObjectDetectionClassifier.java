@@ -14,7 +14,7 @@ import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
  * provided in order to perform the inference.
  */
 
-public class ObjectDetectionClassifier implements Classifier {
+class ObjectDetectionClassifier implements Classifier {
     private static final String TF_INFERENCE_LIBRARY_NAME = "tensorflow_inference";
     // Path to frozen model
     private final String MODEL_FILE;

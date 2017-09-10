@@ -20,7 +20,6 @@ public class ImageTools {
 
     private final String TAG_S = "SAVING";
     private final String TAG_R = "READING";
-    public static int kval = 0;
 
     public Mat ReadImage(File path, String name) {
 
@@ -31,7 +30,6 @@ public class ImageTools {
         src = Imgcodecs.imread(filename, Imgcodecs.CV_LOAD_IMAGE_COLOR);
         // 3.0.0
         // src = Imgcodecs.imread(filename, Imgcodecs.CV_LOAD_IMAGE_COLOR);
-
         if (!src.empty()) {
             Log.i(TAG_R, "SUCCESS Reading the image " + name);
             Imgproc.resize(src, src, new Size(320, 240));
@@ -46,27 +44,16 @@ public class ImageTools {
     public void SaveImage(Mat img, long name) { //type of 'name' was String. Changed to long
         Log.i("OpenCVLoad", "ImageTools: SaveImage");
         String dirName = "Cam 2 Pictures";
-        File dir = new File(dirName);
-        if (!dir.exists()) {
-            dir.mkdir();
-        }
         File ph = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), dirName);
+        if (!ph.exists()) {
+            ph.mkdirs();
+        }
 
-        String filename = name + ".jpg";
-        File file = new File(ph, filename);
+        File file = new File(ph, name + ".jpg");
         if (file.exists())
             file.delete();
-        Boolean bool = null;
 
-        String filenm = file.toString();
-
-        Size szResized = new Size(500,500);
-        Mat mSource = img;
-        Mat mResised = new Mat();
-        Imgproc.resize(mSource, mResised, szResized,0,0, Imgproc.INTER_LINEAR);
-
-        bool = Imgcodecs.imwrite(filenm, mResised);
-
+        boolean bool = Imgcodecs.imwrite(file.toString(), img);
         if (bool == true) {
             Log.i("OpenCVLoad", "ImageTools: SaveImage: Success writing image");
         } else

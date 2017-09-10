@@ -32,14 +32,11 @@ import waterdetection.usf.waterdetectionandroid.callbacks.CameraCaptureSessionSt
 import waterdetection.usf.waterdetectionandroid.callbacks.CameraStateCallback;
 import waterdetection.usf.waterdetectionandroid.callbacks.ImageAvailableCallback;
 import waterdetection.usf.waterdetectionandroid.callbacks.OpenCvCallback;
-import waterdetection.usf.waterdetectionandroid.tfclassification.Classifier;
-import waterdetection.usf.waterdetectionandroid.tfclassification.ClassifierFactory;
-
+import waterdetection.usf.waterdetectionandroid.detection.modes.DetectorFactory;
 
 /**
  * Created by Panos on 11/11/2016.
  */
-
 /**************************************************************************************
  * Yueng. The code below allows for the continuous retrieval of frames
  * from the camera. Camera2 API by Google is used. The files are being saved as JPEG's. Also,
@@ -53,7 +50,6 @@ import waterdetection.usf.waterdetectionandroid.tfclassification.ClassifierFacto
  *
  * Enjoy!
  * **********************************************************************************/
-
 //class definition for the camera service, extending a service
 public class Camera2Service extends Service {
     /*the following variables define the tag for logs, the camera, the camera device,
@@ -102,8 +98,7 @@ public class Camera2Service extends Service {
         stackBuilder.addNextIntent(mainActivity);
         PendingIntent pendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
         mBuilder.setContentIntent(pendingIntent);
-        Classifier classifier = ClassifierFactory.createFloorDetectionClassifier(getAssets());
-        this.onImageAvailableListener =  new ImageAvailableCallback(classifier);
+        this.onImageAvailableListener =  new ImageAvailableCallback(DetectorFactory.createFloorDetector(getAssets()));
         startForeground(41413, mBuilder.build());
     }
 
