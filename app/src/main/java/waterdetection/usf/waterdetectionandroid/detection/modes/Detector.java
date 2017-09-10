@@ -5,5 +5,5 @@ import org.opencv.core.Mat;
 import java.io.Serializable;
 
 public interface Detector extends Serializable {
-    Mat performDetection(float[] inputValues, Mat originalImage);
+    Mat performDetection(Mat originalImage);
 }

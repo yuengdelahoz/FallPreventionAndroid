@@ -73,12 +73,7 @@ public class ImageAvailableCallback implements ImageReader.OnImageAvailableListe
                     // We copy the mat to a new one where the data type is CV_32FC3 because it is
                     // the type expected by the classifier and otherwise it would raise an error.
                     mResised.assignTo(im, CvType.CV_32FC3);
-                    int size = (int)im.total() * im.channels();
-                    float[] imgValues = new float[size];
-                    // Extract the values of the image to a float array since the classifier expects
-                    // its input to be a float array
-                    im.get(0, 0, imgValues);
-                    Mat fin = detector.performDetection(imgValues, mResised);
+                    Mat fin = detector.performDetection(im);
                     mat.SaveImage(fin,System.currentTimeMillis()); //Save the output image
                     img.close();
                 } catch (Exception e) {
