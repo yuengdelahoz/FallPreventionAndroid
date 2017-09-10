@@ -13,11 +13,7 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
-import android.hardware.camera2.CaptureResult;
-import android.hardware.camera2.TotalCaptureResult;
-import android.media.Image;
 import android.media.ImageReader;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
@@ -25,35 +21,19 @@ import android.util.Log;
 import android.view.Surface;
 import android.widget.Toast;
 
-import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
-import org.opencv.core.CvType;
-import org.opencv.core.Mat;
-import org.opencv.core.MatOfByte;
-import org.opencv.core.Rect;
-import org.opencv.core.Scalar;
-import org.opencv.core.Size;
-import org.opencv.imgproc.Imgproc;
 
-import java.io.File;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-
+import waterdetection.usf.waterdetectionandroid.callbacks.CameraCaptureSessionCaptureCallback;
+import waterdetection.usf.waterdetectionandroid.callbacks.CameraCaptureSessionStateCallback;
+import waterdetection.usf.waterdetectionandroid.callbacks.CameraStateCallback;
+import waterdetection.usf.waterdetectionandroid.callbacks.ImageAvailableCallback;
+import waterdetection.usf.waterdetectionandroid.callbacks.OpenCvCallback;
 import waterdetection.usf.waterdetectionandroid.tfclassification.Classifier;
 import waterdetection.usf.waterdetectionandroid.tfclassification.ClassifierFactory;
-
-import static org.opencv.core.CvType.CV_32F;
-import static org.opencv.core.CvType.CV_32FC3;
-import static org.opencv.core.CvType.CV_8UC3;
-import static org.opencv.imgcodecs.Imgcodecs.IMREAD_COLOR;
-import static org.opencv.imgcodecs.Imgcodecs.IMREAD_UNCHANGED;
-import static org.opencv.imgcodecs.Imgcodecs.imdecode;
-import static org.opencv.core.Core.add;
-import static org.opencv.core.Core.multiply;
 
 
 /**
@@ -76,85 +56,28 @@ import static org.opencv.core.Core.multiply;
 
 //class definition for the camera service, extending a service
 public class Camera2Service extends Service {
-
     /*the following variables define the tag for logs, the camera, the camera device,
      * the session for the capture session of the camera,an image reader to handle the image,
      * a handler thread to run the service on a separate thread to not block the ui,
      * and a handler to run with the new thread*/
     private static final String TAG = "Camera2Service";
     private static final int CAMERA = CameraCharacteristics.LENS_FACING_BACK;
-    /**
-     * Number of frames to wait while the camera is warming up before switching from the dummy surface
-     * to the real camera surface
-     */
-    private static final int WAIT_FRAMES = 120;
     private CameraDevice cameraDevice;
     private CameraCaptureSession session;
     private ImageReader imageReader;
     private HandlerThread mBackgroundThread;
     private Handler mBackgroundHandler;
     private CameraCharacteristics mCharacteristics;
-    public static boolean active = false;
-    ImageTools mat = new ImageTools();
-    private Classifier classifier;
-
-    private BaseLoaderCallback opencv_callback = new BaseLoaderCallback(this) {
-        @Override
-        public void onManagerConnected(int status) {
-            switch (status) {
-                case LoaderCallbackInterface.SUCCESS: {
-                    Log.i("OpenCVLoad", "OpenCV loaded successfully");
-                    Log.e(TAG,"Current thread is " + Thread.currentThread().getName());
-                }
-                break;
-                default: {
-                    super.onManagerConnected(status);
-                }
-                break;
-            }
-        }
-    };
-
+    // Callbacks
+    private OpenCvCallback opencv_callback = new OpenCvCallback(this);
+    private CameraStateCallback cameraStateCallback = new CameraStateCallback(this);
+    private CameraCaptureSessionStateCallback cameraCaptureSessionStateCallback = new CameraCaptureSessionStateCallback(this);
+    private CameraCaptureSessionCaptureCallback cameraCaptureSessionCaptureCallback = new CameraCaptureSessionCaptureCallback(this);
+    private ImageAvailableCallback onImageAvailableListener;
     /**
      * A {@link Semaphore} to prevent the app from exiting before closing the camera.
      */
     private Semaphore mCameraOpenCloseLock = new Semaphore(1);
-
-
-
-    /*the following is a callback object for the states of the camera device*/
-    private CameraDevice.StateCallback cameraStateCallback = new CameraDevice.StateCallback() {
-        @Override
-        public void onOpened(CameraDevice camera) {
-            Log.i(TAG, "onOpened");
-            //sets the cameraDevice variable to the opened camera
-            cameraDevice = camera;
-            /*the following  gives a surface to the images captured by the camera.
-            * this is important so we can display the images later. We pass a dummy surface we use while the
-            * camera is auto-adjusting or warming up, and the read camera surface to use later */
-            try {
-                //cameraDevice.createCaptureSession(Arrays.asList(imageReader.getSurface()), sessionStateCallback, null);
-                cameraDevice.createCaptureSession(Arrays.asList(mDummySurface, imageReader.getSurface()), sessionStateCallback, null);
-            } catch (CameraAccessException e) {
-                Log.e(TAG, e.getMessage());
-                stopBackgroundThread();
-            }
-        }
-
-        @Override
-        public void onDisconnected(CameraDevice camera) {
-            Log.i(TAG, "onDisconnected");
-        }
-
-        @Override
-        public void onError(CameraDevice camera, int error) {
-            Log.e(TAG, "onError");
-        }
-
-        /* onOpened, onDisconnected, and onError are states the camera
-        * device can be in, similar to the states of an app*/
-    };
-
     // When the Camera2Service service is started, it used to instantly make requests to the phone
     // camera. In some devices the camera takes a little to "warm up" or autocalibrate, and the output
     // pictures would be too dark and out of focus. For this reason, while the camera is auto-adjusting,
@@ -163,124 +86,6 @@ public class Camera2Service extends Service {
     // start saving the real pictures.
     private SurfaceTexture mDummyPreview = new SurfaceTexture(1);
     private Surface mDummySurface = new Surface(mDummyPreview);
-
-    /*the following is a callback object about the state of the camera capture session*/
-    private CameraCaptureSession.StateCallback sessionStateCallback = new CameraCaptureSession.StateCallback() {
-        @Override
-        public void onConfigured(CameraCaptureSession session) {
-            Log.i(TAG, "onConfigured");
-            /*the following creates a session for the camera to
-             * repeatedly make requests to capture an image (will go until
-             * stopped by the user or app crashes) */
-            Camera2Service.this.session = session;
-            try {
-                // In the beginning, the capture request works with a dummy surface while the real camera is adjusting
-                session.setRepeatingRequest(createCaptureRequest(mDummySurface), mCaptureCallback, mBackgroundHandler);
-            } catch (CameraAccessException e) {
-                Log.e(TAG, e.getMessage());
-            }
-        }
-
-        @Override
-        public void onConfigureFailed(CameraCaptureSession session) {
-            Log.i(TAG, "onConfiguredFailed");
-        }
-    };
-
-    /* the following acquires an image reader from the listener. this in turn lets us call the
-    * method to acquire the latest image*/
-    private ImageReader.OnImageAvailableListener onImageAvailableListener = new ImageReader.OnImageAvailableListener() {
-
-        @Override
-        public void onImageAvailable(ImageReader reader) {
-            /* the following variables are used to convert the data we get to bytes,
-            * and re-construct them to finally create and save an image file*/
-            Image img;
-            ByteBuffer buffer;
-            byte[] bytes;
-            //pretty self explanatory. like, c'mon now. read the line. lazy...
-            img = reader.acquireLatestImage();
-            /*the full code below would also have "if-else" or "else" statements
-            * to check for other types of retrieved images/files */
-            if (img.getFormat() == ImageFormat.JPEG) {
-                //check if we have external storage to write to. if we do, save acquired image
-                if (isExternalStorageWritable())
-                {
-                    /*method to create a new file/item/object and set
-                    it up for a JPEG assignment*/
-                    //imgFile = CreateJPEG();
-                    try {
-                    /*bytebuffer is a class that allows us to read/write bytes
-                    * here it is used with "Save(... , ...)" to assign these
-                    * collected bytes from the image to the created file from "CreateJpeg()"*/
-                        buffer = img.getPlanes()[0].getBuffer();
-                        int h = img.getHeight();
-                        int w = img.getWidth();
-                        Mat imgMat = new Mat(w,h, CvType.CV_32FC3);
-
-                        bytes = new byte[buffer.remaining()];
-                        buffer.get(bytes);
-                        // Obtain a float array with the values of the image captured. The classifier
-                        // uses this float array to perform the inference
-                        MatOfByte m = new MatOfByte(bytes);
-                        imgMat = imdecode(m, IMREAD_COLOR);
-                        // We need to resize the image because the floor detection model expects an input
-                        // image with dimensions 500x500
-                        Size szResized = new Size(500,500);
-                        Mat mSource = imgMat;
-                        Mat mResised = new Mat();
-                        Imgproc.resize(mSource, mResised, szResized,0,0, Imgproc.INTER_LINEAR);
-                        Mat im = new Mat(500,500,3);
-                        // We copy the mat to a new one where the data type is CV_32FC3 because it is
-                        // the type expected by the classifier and otherwise it would raise an error.
-                        mResised.assignTo(im, CvType.CV_32FC3);
-                        int size = (int)im.total() * im.channels();
-                        float[] imgValues = new float[size];
-                        // Extract the values of the image to a float array since the classifier expects
-                        // its input to be a float array
-                        im.get(0, 0, imgValues);
-                        float[] superpixels = classifier.classifyImage(imgValues); //Perform the inference on the input image
-                        Mat fin = paintOriginalImage(superpixels, mResised); //Paint the results on the original image
-                        mat.SaveImage(fin,System.currentTimeMillis()); //Save the output image
-                        img.close();
-                    } catch (Exception e) {
-                        Log.i("Exception e", "ImageFormat.JPEG,,,,,,," + e.getMessage());
-                        e.getStackTrace();
-                    }
-                }
-            }
-        }
-    };
-
-    /**
-     * Method that paints the results of the floor detection model on top of the original input image
-     * When a superpixel is classified as "floor", then all the pixels in the image that belong to that
-     * superpixel are colored black, so that in the end the returned image is the original image with
-     * all the areas identified as floor are colored black.
-     * @param superpixels - The 1250 vector with the output of the floor detection model
-     * @param originalImage - The original resized image (500x500)
-     * @return - A copy of the original image where all pixels classified as floor are colored black
-     */
-    private Mat paintOriginalImage(float[] superpixels, Mat originalImage) {
-        int height = originalImage.height();
-        int width = originalImage.width();
-        Mat or = new Mat(500, 500, CV_32FC3);
-        originalImage.convertTo(or, CV_32FC3);
-        int superpixel = 0;
-        for (int sv = 0; sv < height; sv += 10) { // 50 superpixels in the height direction
-            for (int sh = 0; sh < width; sh += 20) { // 25 superpixels in the width direction
-                if (superpixels[superpixel] > 0.5) {
-                    Rect roi = new Rect(sh, sv, 20, 10);
-                    Mat oSubOrig = or.submat(sv, sv+10, sh, sh+20);
-                    Mat mask = new Mat(10, 20, CV_32FC3, new Scalar(0, 0, 1));
-                    Mat subOrig = oSubOrig.mul(mask);
-                    subOrig.copyTo(or.submat(roi));
-                }
-                superpixel++;
-            }
-        }
-        return or;
-    }
 
     //state of the app once tapped on
     @Override
@@ -297,7 +102,8 @@ public class Camera2Service extends Service {
         stackBuilder.addNextIntent(mainActivity);
         PendingIntent pendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
         mBuilder.setContentIntent(pendingIntent);
-        this.classifier = ClassifierFactory.createFloorDetectionClassifier(getAssets());
+        Classifier classifier = ClassifierFactory.createFloorDetectionClassifier(getAssets());
+        this.onImageAvailableListener =  new ImageAvailableCallback(classifier);
         startForeground(41413, mBuilder.build());
     }
 
@@ -338,7 +144,6 @@ public class Camera2Service extends Service {
         }
         //background thread started, so we do not block ui thread
         startBackgroundThread();
-        active = true;
         Toast.makeText(this, "service starting", Toast.LENGTH_SHORT).show();
         CameraManager manager = (CameraManager) getSystemService(CAMERA_SERVICE);
         try {
@@ -369,7 +174,6 @@ public class Camera2Service extends Service {
     @Override
     public void onDestroy() {
         closeCamera();
-
     }
 
     //@Nullable
@@ -378,66 +182,13 @@ public class Camera2Service extends Service {
         return null;
     }
 
-//    public File getAlbumStorageDir(String albumName) {
-//        // Path is Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-//        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),albumName);
-//        if (!file.mkdirs()) {
-//            // Shows this error also when directory already existed
-//            Log.e("Error", "Directory not created");
-//        }
-//        return file;
-//    }
-
-    //checks if there is external storage to write to
-    public boolean isExternalStorageWritable() {
-        String state = Environment.getExternalStorageState();
-        if (Environment.MEDIA_MOUNTED.equals(state)) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * The capture callback has methods that are called when a capture has been progressed and when a
-     * capture has been completed. In this case, the callback is used to keep track of the number of
-     * frames made initially to the dummy surface while the camera is warming up or auto-adjusting, and
-     * after a number of frames have been completed and the camera is ready, the surface used in the
-     * capture session is changed from the dummy surface to the real camera surface.
-     */
-    private CameraCaptureSession.CaptureCallback mCaptureCallback
-            = new CameraCaptureSession.CaptureCallback() {
-        private int m = 0;
-        @Override
-        public void onCaptureProgressed( CameraCaptureSession session,
-                                         CaptureRequest request,
-                                         CaptureResult partialResult) {
-            Log.i(TAG, "CAPTURE PROGRESSED: " + m++);
-        }
-
-        @Override
-        public void onCaptureCompleted( CameraCaptureSession session,
-                                        CaptureRequest request,
-                                        TotalCaptureResult result) {
-            Log.i(TAG, "CAPTURE COMPLETED: " + m++);
-            if (m == WAIT_FRAMES) {
-                try {
-                    // Change the surface of the request session to use the real camera surface and start saving the real pictures
-                    Camera2Service.this.session.setRepeatingRequest(createCaptureRequest(imageReader.getSurface()), null, null);
-                } catch (CameraAccessException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    };
-
     //a package of setting and outputs needed to capture an image from the camera device
-    private CaptureRequest createCaptureRequest(Surface surface) {
+    public CaptureRequest createCaptureRequest(Surface surface) {
         try {
             //"builds" a request to capture an image
             CaptureRequest.Builder builder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
             /* from the built request to capture an image, here we get the surface
              to be used to project the image on*/
-            //builder.addTarget(imageReader.getSurface());
             builder.addTarget(surface);
             /** this needs to be fixed*/
             builder.set(CaptureRequest.JPEG_ORIENTATION, mCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION));
@@ -461,7 +212,7 @@ public class Camera2Service extends Service {
     }
 
     /** Stops the background thread and its {@link Handler}.*/
-    private void stopBackgroundThread() {
+    public void stopBackgroundThread() {
         mBackgroundThread.quitSafely();
         try {
             mBackgroundThread.join();
@@ -480,7 +231,6 @@ public class Camera2Service extends Service {
     private void closeCamera() {
         Log.i(TAG,"Closing Camera");
         Toast.makeText(this, "stopping service", Toast.LENGTH_SHORT).show();
-
         try {
             mCameraOpenCloseLock.acquire();
             if (null != session) {
@@ -500,8 +250,43 @@ public class Camera2Service extends Service {
         } finally {
             stopBackgroundThread();
             mCameraOpenCloseLock.release();
-            active = false;
             Log.i(TAG,"Closed Camera");
         }
+    }
+
+    public CameraDevice getCameraDevice() {
+        return this.cameraDevice;
+    }
+
+    public void setCameraDevice(CameraDevice cameraDevice) {
+        this.cameraDevice = cameraDevice;
+    }
+
+    public Surface getmDummySurface() {
+        return this.mDummySurface;
+    }
+
+    public ImageReader getImageReader() {
+        return this.imageReader;
+    }
+
+    public CameraCaptureSessionStateCallback getCameraCaptureSessionStateCallback() {
+        return this.cameraCaptureSessionStateCallback;
+    }
+
+    public CameraCaptureSession getCameraCaptureSession() {
+        return this.session;
+    }
+
+    public void setCameraCaptureSession(CameraCaptureSession session) {
+        this.session = session;
+    }
+
+    public Handler getmBackgroundHandler() {
+        return this.mBackgroundHandler;
+    }
+
+    public CameraCaptureSessionCaptureCallback getCameraCaptureSessionCaptureCallback() {
+        return this.cameraCaptureSessionCaptureCallback;
     }
 }

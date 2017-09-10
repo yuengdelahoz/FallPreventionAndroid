@@ -7,7 +7,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -18,17 +17,8 @@ import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import org.opencv.android.BaseLoaderCallback;
-import org.opencv.android.LoaderCallbackInterface;
-import org.opencv.android.OpenCVLoader;
-import org.opencv.core.Mat;
-
-import java.text.DecimalFormat;
-
-import static org.opencv.imgcodecs.Imgcodecs.imread;
 public class MainActivity extends Activity {
 
     private static final int REQUEST_WRITE_STORAGE = 112;
@@ -43,7 +33,6 @@ public class MainActivity extends Activity {
     private Intent deployAgent;
     boolean mBound = false;
 
-    private static DecimalFormat fmt = new DecimalFormat("#.#");
     private Button btn;
 
     @Override
@@ -75,40 +64,6 @@ public class MainActivity extends Activity {
         }
     }
 
-
-//    public Mat CVTest()
-//    {
-//        String s = "jkl";
-//        final Mat img = imread(s);
-//
-//        if (img.empty())
-//        {
-//            Log.i("OpenCVLoad", "img is null");
-//            return null;
-//        }
-//        return img;
-//    }
-
-
-    private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
-        @Override
-        public void onManagerConnected(int status) {
-            switch (status) {
-                case LoaderCallbackInterface.SUCCESS: {
-                    Log.i("OpenCVLoad", "OpenCV loaded successfully");
-                    // mOpenCvCameraView.enableView();
-                    btn.setEnabled(true);
-                    //CVTest();
-                }
-                break;
-                default: {
-                    super.onManagerConnected(status);
-                }
-                break;
-            }
-        }
-    };
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -130,37 +85,15 @@ public class MainActivity extends Activity {
             requestPermissions(new String[]{Manifest.permission.CAMERA}, REQUEST_CAMERA);
         }
 
-
-//        if (!OpenCVLoader.initDebug()) {
-//            Log.d("OpenCV", "Internal OpenCV library not found. Using OpenCV Manager for initialization");
-//            OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_2_0, this, mLoaderCallback);
-//        } else {
-//            Log.d("OpenCV", "OpenCV library found inside package. Using it!");
-//            mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
-//        }
-
-
-
         deployAgent = new Intent(this, HiddenAgent.class);
-        // bindService(deployAgent, mConnection, Context.BIND_AUTO_CREATE);
-
         final Intent processImage = new Intent(this,Camera2Service.class);
-
-        //startService(processImage);
-
         btn = (Button) findViewById(R.id.startBtn);
-        // btn.setEnabled(false);
-
         btn.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
                 if(mBound) {
                     if (btn.getText().toString().equals("Launch")) {  //Start
-
-                        //  startActivity(new Intent(getApplicationContext(), Camera_Activity.class));
-
                         startService(processImage);
-
                         btn.setText("Stop");
                         Message message = Message.obtain(null, HiddenAgent.Start);
                         message.replyTo = new Messenger(new ResponseHandler());
@@ -169,16 +102,8 @@ public class MainActivity extends Activity {
                         } catch (RemoteException e) {
                             e.printStackTrace();
                         }
-
-
-//                        startActivity(new Intent(getApplicationContext(), Camera_Activity.class));
-
-                        /** Code for camera to start doing its thing goes here? */
-
                     } else if (btn.getText().toString().equals("Stop")) { //Stop
-
                         stopService(processImage);
-
                         btn.setText("Launch");
                         Message message = Message.obtain(null, HiddenAgent.Stop);
                         message.replyTo = new Messenger(new ResponseHandler());
@@ -196,19 +121,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onResume() {
-        //load libraries for CV
-        //callback method
-        //super.onResume();
-        // OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_2_0, this, mLoaderCallback);
-
         super.onResume();
-//        if (!OpenCVLoader.initDebug()) {
-//            Log.d("OpenCV", "Internal OpenCV library not found. Using OpenCV Manager for initialization");
-//            OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_2_0, this, mLoaderCallback);
-//        } else {
-//            Log.d("OpenCV", "OpenCV library found inside package. Using it!");
-//            mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
-//        }
     }
 
     class ResponseHandler extends Handler {

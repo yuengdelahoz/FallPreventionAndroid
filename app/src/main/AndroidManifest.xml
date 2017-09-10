@@ -34,7 +34,6 @@
             </intent-filter>
         </activity>
         <activity android:name=".Camera_Activity" />
-        <activity android:name=".MainActivity_old"></activity>
 
         <service
             android:name=".Camera2Service"
