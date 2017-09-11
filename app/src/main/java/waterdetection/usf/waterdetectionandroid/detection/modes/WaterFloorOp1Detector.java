@@ -1,6 +1,7 @@
 package waterdetection.usf.waterdetectionandroid.detection.modes;
 
 import android.content.res.AssetManager;
+import android.util.Log;
 
 import org.opencv.core.Core;
 import org.opencv.core.Mat;

@@ -69,10 +69,8 @@ public class ImageAvailableCallback implements ImageReader.OnImageAvailableListe
                     Mat mSource = imgMat;
                     Mat mResised = new Mat();
                     Imgproc.resize(mSource, mResised, szResized,0,0, Imgproc.INTER_LINEAR);
-                    Mat im = new Mat(500,500,3);
-                    // We copy the mat to a new one where the data type is CV_32FC3 because it is
-                    // the type expected by the classifier and otherwise it would raise an error.
-                    mResised.assignTo(im, CvType.CV_32FC3);
+                    Mat im = new Mat(500,500,CvType.CV_8UC3);
+                    mResised.assignTo(im, CvType.CV_8UC3);
                     Mat fin = detector.performDetection(im);
                     mat.SaveImage(fin,System.currentTimeMillis()); //Save the output image
                     img.close();
