@@ -9,9 +9,9 @@ import android.content.res.AssetManager;
 public class ClassifierFactory {
     // Name of the frozen model files in the Android Assets folder
     private final static String FLOOR_MODEL_FILE = "file:///android_asset/floor_model.pb";
-    private final static String WATER_MODEL_FILE = "file:///android_asset/water_model_original.pb";
-    private final static String WATER_FLOOR_OP1_MODEL_FILE = "file:///android_asset/water_model_opt_1.pb";
-    private final static String WATER_FLOOR_OP2_MODEL_FILE = "file:///android_asset/water_model_opt_2.pb";
+    private final static String WATER_MODEL_FILE = "file:///android_asset/v2_water_model_original.pb";
+    private final static String WATER_FLOOR_OP1_MODEL_FILE = "file:///android_asset/v2_water_model_op1.pb";
+    private final static String WATER_FLOOR_OP2_MODEL_FILE = "file:///android_asset/v2_water_model_op2.pb";
     // Names of the different tensor nodes in the computational graph
     private static final String INPUT_NODE_NAME = "input_images:0";
     private static final String OUTPUT_NODE_NAME = "superpixels:0";

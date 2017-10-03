@@ -1,16 +1,11 @@
 package waterdetection.usf.waterdetectionandroid.detection.modes;
 
-import android.util.Log;
-
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
-import java.util.Arrays;
-
-import static org.opencv.core.CvType.CV_32F;
 import static org.opencv.core.CvType.CV_32FC3;
 import static org.opencv.core.CvType.CV_8U;
 import static org.opencv.core.CvType.CV_8UC1;
@@ -43,7 +38,7 @@ public class ImgUtils {
                     Mat mask = new Mat(10, 20, CV_8UC3, new Scalar(0, 0, 1));
                     Mat subOrig = oSubOrig.mul(mask);
                     subOrig.copyTo(or.submat(roi));
-                } else if (superpixels[superpixel] > 0.5) {
+                } else if (superpixels[superpixel] <= 0.5 && obscure) {
                     or.submat(roi).setTo(new Scalar(0, 0, 0));
                 }
                 superpixel++;

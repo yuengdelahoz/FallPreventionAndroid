@@ -6,26 +6,36 @@ import android.util.Log;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 import waterdetection.usf.waterdetectionandroid.tfclassification.Classifier;
 import waterdetection.usf.waterdetectionandroid.tfclassification.ClassifierFactory;
+import waterdetection.usf.waterdetectionandroid.tfclassification.FileUtils;
 
 class WaterFloorOp1Detector implements Detector {
     private Classifier waterClassifier;
     private Classifier floorClassifier;
     private ImgUtils imgUtils = new ImgUtils();
+    private FileUtils fileUtils = new FileUtils();
+    private boolean isExternalStorageWritable;
+    private File albumStorageDir;
 
-    public WaterFloorOp1Detector(AssetManager assetManager) {
+    public WaterFloorOp1Detector(AssetManager assetManager, File albubStorageDir, boolean isExternalStorageWritable) {
         this.waterClassifier = ClassifierFactory.createWaterFloorOp1DetectionClassifier(assetManager);
         this.floorClassifier = ClassifierFactory.createFloorDetectionClassifier(assetManager);
+        this.albumStorageDir = albubStorageDir;
+        this.isExternalStorageWritable = isExternalStorageWritable;
     }
 
     @Override
     public Mat performDetection(Mat originalImage) {
+        Long startTime = System.currentTimeMillis();
         float[] floorInputValues = imgUtils.convertMatToFloatArr(originalImage);
+        Long startFloor = System.currentTimeMillis();
         float[] floorSuperpixels = floorClassifier.classifyImage(floorInputValues); //Perform the inference on the input image
+        Long endFloor = System.currentTimeMillis();
         Mat floorImage = imgUtils.paintBlackWhiteResults(floorSuperpixels, originalImage);
         Mat edgeImage = imgUtils.createLaplacianImage(originalImage);
         List<Mat> mats = new ArrayList<Mat>();
@@ -35,8 +45,14 @@ class WaterFloorOp1Detector implements Detector {
         Mat inputImage = new Mat();
         Core.merge(mats, inputImage);
         float[] waterInputValues = imgUtils.convertMatToFloatArr(inputImage);
+        Long startWater = System.currentTimeMillis();
         float[] waterSuperpixels = waterClassifier.classifyImage(waterInputValues);
+        Long endWater = System.currentTimeMillis();
         Mat waterResImage = imgUtils.paintOriginalImage(waterSuperpixels, originalImage, false);
+        Long endTime = System.currentTimeMillis();
+        if (isExternalStorageWritable) {
+            fileUtils.mSaveData("TimesWaterOp1.txt", (endFloor-startFloor) + ";" + (endWater-startWater) + ";" + (endTime-startTime), albumStorageDir);
+        }
         return waterResImage;
     }
 }

@@ -14,6 +14,7 @@ import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
 import android.media.ImageReader;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
@@ -23,7 +24,14 @@ import android.widget.Toast;
 
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
+import org.opencv.core.Core;
+import org.opencv.core.CvType;
+import org.opencv.core.Mat;
+import org.opencv.imgproc.Imgproc;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
@@ -33,6 +41,11 @@ import waterdetection.usf.waterdetectionandroid.callbacks.CameraStateCallback;
 import waterdetection.usf.waterdetectionandroid.callbacks.ImageAvailableCallback;
 import waterdetection.usf.waterdetectionandroid.callbacks.OpenCvCallback;
 import waterdetection.usf.waterdetectionandroid.detection.modes.DetectorFactory;
+
+import static org.opencv.imgcodecs.Imgcodecs.CV_LOAD_IMAGE_COLOR;
+import static org.opencv.imgcodecs.Imgcodecs.IMREAD_COLOR;
+import static org.opencv.imgcodecs.Imgcodecs.imread;
+import static org.opencv.imgcodecs.Imgcodecs.imwrite;
 
 /**
  * Created by Panos on 11/11/2016.
@@ -98,8 +111,26 @@ public class Camera2Service extends Service {
         stackBuilder.addNextIntent(mainActivity);
         PendingIntent pendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
         mBuilder.setContentIntent(pendingIntent);
-        this.onImageAvailableListener =  new ImageAvailableCallback(DetectorFactory.createWaterFloorOp2Detector(getAssets()));
+        this.onImageAvailableListener =  new ImageAvailableCallback(DetectorFactory.createWaterFloorOp2Detector(getAssets(), getAlbumStorageDir("Exec times"), isExternalStorageWritable()));
         startForeground(41413, mBuilder.build());
+    }
+
+    public File getAlbumStorageDir(String albumName) {
+        // Path is Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),albumName);
+        if (!file.mkdirs()) {
+            // Shows this error also when directory already existed
+            Log.e("Error", "Directory not created");
+        }
+        return file;
+    }
+
+    public boolean isExternalStorageWritable() {
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state)) {
+            return true;
+        }
+        return false;
     }
 
     /**

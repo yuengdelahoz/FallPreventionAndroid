@@ -65,11 +65,12 @@ public class ImageAvailableCallback implements ImageReader.OnImageAvailableListe
                     imgMat = imdecode(m, IMREAD_COLOR);
                     // We need to resize the image because the floor detection model expects an input
                     // image with dimensions 500x500
+                    Long startTime = System.currentTimeMillis();
                     Size szResized = new Size(500,500);
                     Mat mSource = imgMat;
                     Mat mResised = new Mat();
-                    Imgproc.resize(mSource, mResised, szResized,0,0, Imgproc.INTER_LINEAR);
-                    Mat im = new Mat(500,500,CvType.CV_8UC3);
+                    Imgproc.resize(mSource, mResised, szResized,0,0, Imgproc.INTER_AREA);
+                    Mat im = new Mat();
                     mResised.assignTo(im, CvType.CV_8UC3);
                     Mat fin = detector.performDetection(im);
                     mat.SaveImage(fin,System.currentTimeMillis()); //Save the output image
