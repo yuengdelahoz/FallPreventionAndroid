@@ -3,7 +3,7 @@ package waterdetection.usf.waterdetectionandroid.tfclassification;
 import android.content.res.AssetManager;
 
 /**
- * Created by raulestrada on 8/27/17.
+ * Use this class to load the model from the pb file and return a classifier
  */
 
 public class ClassifierFactory {

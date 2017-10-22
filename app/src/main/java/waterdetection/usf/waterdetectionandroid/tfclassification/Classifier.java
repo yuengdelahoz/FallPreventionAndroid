@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * Created by raulestrada on 8/27/17.
+ *
  * This interface contains all the methods that a normal TensorFlow classifier supports
  */
 public interface Classifier extends Serializable {

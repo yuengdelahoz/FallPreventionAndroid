@@ -40,32 +40,4 @@ public class OpenCvCallback extends BaseLoaderCallback {
             break;
         }
     }
-
-    /*private void testImg(String fileName) {
-        File f = new File(mAppContext.getCacheDir() + "/" + fileName + ".jpg");
-        if (!f.exists()) {
-            try {
-                InputStream is = mAppContext.getAssets().open(fileName + ".jpg");
-                int size = is.available();
-                byte[] buffer = new byte[size];
-                is.read(buffer);
-                is.close();
-                FileOutputStream fos = new FileOutputStream(f);
-                fos.write(buffer);
-                fos.close();
-            } catch (Exception ex) {
-                throw new RuntimeException(ex);
-            }
-        }
-        Log.i("RAUL DEBUG", "AQUI");
-        Mat orig = imread(f.getAbsolutePath(), IMREAD_COLOR);
-        Mat img = new Mat();
-        orig.assignTo(img, CvType.CV_8UC3);
-        Mat finalImg = DetectorFactory.createWaterFloorOp2Detector(mAppContext.getAssets()).performDetection(img);
-        imwrite(Environment.getExternalStorageDirectory() + "/Download/" + fileName + "-op2-android.jpg", finalImg);
-        Mat finalImg2 = DetectorFactory.createWaterFloorOp1Detector(mAppContext.getAssets()).performDetection(img);
-        imwrite(Environment.getExternalStorageDirectory() + "/Download/" + fileName + "-op1-android.jpg", finalImg2);
-        Mat finalImg3 = DetectorFactory.createWaterDetector(mAppContext.getAssets()).performDetection(img);
-        imwrite(Environment.getExternalStorageDirectory() + "/Download/" + fileName + "-android.jpg", finalImg3);
-    }*/
 }

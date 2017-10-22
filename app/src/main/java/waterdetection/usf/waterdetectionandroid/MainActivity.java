@@ -29,10 +29,6 @@ public class MainActivity extends Activity {
     boolean useCamera = false;
     boolean canRead = false;
 
-    private Messenger mService = null;
-    private Intent deployAgent;
-    boolean mBound = false;
-
     private Button btn;
 
     @Override
@@ -85,36 +81,18 @@ public class MainActivity extends Activity {
             requestPermissions(new String[]{Manifest.permission.CAMERA}, REQUEST_CAMERA);
         }
 
-        deployAgent = new Intent(this, HiddenAgent.class);
         final Intent processImage = new Intent(this,Camera2Service.class);
         btn = (Button) findViewById(R.id.startBtn);
         btn.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                if(mBound) {
-                    if (btn.getText().toString().equals("Launch")) {  //Start
-                        startService(processImage);
-                        btn.setText("Stop");
-                        Message message = Message.obtain(null, HiddenAgent.Start);
-                        message.replyTo = new Messenger(new ResponseHandler());
-                        try {
-                            mService.send(message);
-                        } catch (RemoteException e) {
-                            e.printStackTrace();
-                        }
-                    } else if (btn.getText().toString().equals("Stop")) { //Stop
-                        stopService(processImage);
-                        btn.setText("Launch");
-                        Message message = Message.obtain(null, HiddenAgent.Stop);
-                        message.replyTo = new Messenger(new ResponseHandler());
-                        try {
-                            mService.send(message);
-                        } catch (RemoteException e) {
-                            e.printStackTrace();
-                        }
-                    }
+                if (btn.getText().toString().equals("Launch")) {  //Start
+                    startService(processImage);
+                    btn.setText("Stop");
+                } else if (btn.getText().toString().equals("Stop")) { //Stop
+                    stopService(processImage);
+                    btn.setText("Launch");
                 }
-                else bindService(deployAgent, mConnection, Context.BIND_AUTO_CREATE);
             }
         });
     }
@@ -122,47 +100,6 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-    }
-
-    class ResponseHandler extends Handler {
-        @Override
-        public void handleMessage(Message msg){
-            switch(msg.what){
-                case HiddenAgent.briefing:
-                    Bundle incomingData = msg.getData();
-                    // UpdateWidgets(incomingData);
-                    break;
-                case HiddenAgent.dismissed:
-                    unbindService(mConnection);
-                    mService = null;
-                    mBound = false;
-                    break;
-                default: super.handleMessage(msg);
-            }
-        }
-    }
-
-    private ServiceConnection mConnection = new ServiceConnection(){
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service){
-            mService = new Messenger(service);
-            mBound = true;
-            Toast.makeText(getApplicationContext(),"All set!", Toast.LENGTH_SHORT).show();
-        }
-        @Override
-        public void onServiceDisconnected(ComponentName name){
-
-            Toast.makeText(getApplicationContext(),"Service Crashed", Toast.LENGTH_SHORT).show();
-        }
-
-    };
-
-    @Override
-    public void onStop(){
-        mBound = false;
-        mService = null;
-        unbindService(mConnection);
-        super.onStop();
     }
 
 }

@@ -18,10 +18,11 @@ public class ImgUtils {
     /**
      * Method that paints the results of the floor detection model on top of the original input image
      * When a superpixel is classified as "floor", then all the pixels in the image that belong to that
-     * superpixel are colored black, so that in the end the returned image is the original image with
-     * all the areas identified as floor are colored black.
+     * superpixel are colored black if obscured is true, so that in the end the returned image is the original image with
+     * all the areas identified as floor are colored black. If obscure is false, then we apply the red filter
      * @param superpixels - The 1250 vector with the output of the floor detection model
      * @param originalImage - The original resized image (500x500)
+     * @param obscure - true to paint floor pixels black. False to apply the red filter
      * @return - A copy of the original image where all pixels classified as floor are colored black
      */
     public Mat paintOriginalImage(float[] superpixels, Mat originalImage, boolean obscure) {
@@ -64,6 +65,11 @@ public class ImgUtils {
         return result;
     }
 
+    /**
+     * Computes the LAplacian edge detection on the original input image (500x500)
+     * @param originalImage - 500x500 input image to compute the LAplacian detection on
+     * @return - The black and white laplacian edge detection image
+     */
     public Mat createLaplacianImage(Mat originalImage) {
         Mat gradientImg = new Mat();
         Mat or = new Mat();
@@ -73,6 +79,11 @@ public class ImgUtils {
         return gradientImg;
     }
 
+    /**
+     * Obtains the normalized float array of values from the Mat object
+     * @param inputMat
+     * @return
+     */
     public float[] convertMatToFloatArr(Mat inputMat) {
         Mat normalized = new Mat();
         inputMat.convertTo(normalized, CV_32FC3, 1.0/255.0);

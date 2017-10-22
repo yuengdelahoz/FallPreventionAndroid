@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="waterdetection.usf.waterdetectionandroid">
 
+    <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.CAMERA" />
@@ -37,11 +38,6 @@
 
         <service
             android:name=".Camera2Service"
-            android:enabled="true"
-            android:exported="false"
-            android:process=":com.myprocess"></service>
-        <service
-            android:name=".HiddenAgent"
             android:enabled="true"
             android:exported="false"
             android:process=":com.myprocess"></service>

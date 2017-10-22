@@ -25,7 +25,7 @@ class WaterDetector implements Detector {
     private boolean isExternalStorageWritable;
     private File albumStorageDir;
 
-    public WaterDetector(AssetManager assetManager, File albubStorageDir, boolean isExternalStorageWritable) {
+    WaterDetector(AssetManager assetManager, File albubStorageDir, boolean isExternalStorageWritable) {
         this.classifier = ClassifierFactory.createWaterDetectionClassifier(assetManager);
         this.albumStorageDir = albubStorageDir;
         this.isExternalStorageWritable = isExternalStorageWritable;
@@ -34,7 +34,7 @@ class WaterDetector implements Detector {
     @Override
     public Mat performDetection(Mat originalImage) {
         Long startTime = System.currentTimeMillis();
-        Mat edgeImage = imgUtils.createLaplacianImage(originalImage);
+        Mat edgeImage = imgUtils.createLaplacianImage(originalImage); //Compute the Laplacian edge detection image and add it as the fourth dimension of the input of the water detection model
         List<Mat> mats = new ArrayList<>();
         mats.add(originalImage);
         mats.add(edgeImage);
@@ -45,9 +45,9 @@ class WaterDetector implements Detector {
         Long startWater = System.currentTimeMillis();
         float[] superpixels = classifier.classifyImage(inputValues); //Perform the inference on the input image
         Long endWater = System.currentTimeMillis();
-        Mat finalImage = imgUtils.paintOriginalImage(superpixels, originalImage, false);
+        Mat finalImage = imgUtils.paintOriginalImage(superpixels, originalImage, false); // Paint a red filter on those areas classified as 'water' by the model in the RGB input image
         Long endTime = System.currentTimeMillis();
-        if (isExternalStorageWritable) {
+        if (isExternalStorageWritable) { // Write the execution times in a file in Downloads/Exec Times/TimesWaterOriginal.txt file in the phone
             fileUtils.mSaveData("TimesWaterOriginal.txt", 0 + ";" + (endWater-startWater) + ";" + (endTime-startTime), albumStorageDir);
         }
         return finalImage;

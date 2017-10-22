@@ -17,7 +17,7 @@ class FloorDetector implements Detector {
     private File albumStorageDir;
     private boolean isExternalStorageWritable;
 
-    public FloorDetector(AssetManager assetManager, File albubStorageDir, boolean isExternalStorageWritable) {
+    FloorDetector(AssetManager assetManager, File albubStorageDir, boolean isExternalStorageWritable) {
         this.floorClassifier = ClassifierFactory.createFloorDetectionClassifier(assetManager);
         this.albumStorageDir = albubStorageDir;
         this.isExternalStorageWritable = isExternalStorageWritable;
@@ -30,9 +30,9 @@ class FloorDetector implements Detector {
         Long startFloor = System.currentTimeMillis();
         float[] superpixels = floorClassifier.classifyImage(inputValues); //Perform the inference on the input image
         Long endFloor = System.currentTimeMillis();
-        Mat finalImage = imgUtils.paintOriginalImage(superpixels, originalImage, false);
+        Mat finalImage = imgUtils.paintOriginalImage(superpixels, originalImage, false); //Paint a red filter on those areas classified as 'floor' by the model in the RGB input image
         Long endTime = System.currentTimeMillis();
-        if (isExternalStorageWritable) {
+        if (isExternalStorageWritable) { // Write the execution times in a file in Downloads/Exec Times/TimesFloorOriginal.txt file in the phone
             fileUtils.mSaveData("TimesFloorOriginal.txt", (endFloor - startFloor) + ";" + 0 + ";" + (endTime-startTime), albumStorageDir);
         }
         return finalImage;

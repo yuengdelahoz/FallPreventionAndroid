@@ -8,7 +8,7 @@ import org.opencv.imgcodecs.Imgcodecs;
 import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
 
 /**
- * Created by raulestrada on 8/27/17.
+ *
  * This class represents a classifier that takes an input image and produces an array of superpixels.
  * The computational graph of the model has input, output and keep_prob nodes whose data needs to be
  * provided in order to perform the inference.

@@ -1,16 +1,23 @@
 package waterdetection.usf.waterdetectionandroid;
 
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Environment;
+import android.util.Base64;
 import android.util.Log;
 
+import org.opencv.android.Utils;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfByte;
 import org.opencv.core.Size;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 /**
  * Created by Yueng
@@ -59,6 +66,13 @@ public class ImageTools {
         } else
             Log.d("OpenCVLoad", "ImageTools: SaveImage: Failed to write image");
 
+    }
+
+    public void saveImage(String image) {
+        byte[] decodedString = Base64.decode(image, Base64.DEFAULT);
+        MatOfByte bytes = new MatOfByte(decodedString);
+        Mat mat = Imgcodecs.imdecode(bytes, Imgcodecs.IMREAD_UNCHANGED);
+        SaveImage(mat, System.currentTimeMillis());
     }
 
 }
