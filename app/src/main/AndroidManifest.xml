@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="waterdetection.usf.waterdetectionandroid">
+    package="fallprevention.usf.neuralnetwork">
 
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
@@ -27,17 +27,17 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity">
+        <activity android:name="fallprevention.usf.neuralnetwork.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".Camera_Activity" />
+        <activity android:name="fallprevention.usf.neuralnetwork.Camera_Activity" />
 
         <service
-            android:name=".Camera2Service"
+            android:name="fallprevention.usf.neuralnetwork.Camera2Service"
             android:enabled="true"
             android:exported="false"
             android:process=":com.myprocess"></service>
