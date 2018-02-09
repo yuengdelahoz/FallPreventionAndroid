@@ -35,20 +35,23 @@ public class CameraCaptureSessionCaptureCallback extends CameraCaptureSession.Ca
     public void onCaptureProgressed( CameraCaptureSession session,
                                      CaptureRequest request,
                                      CaptureResult partialResult) {
-        Log.i(TAG, "CAPTURE PROGRESSED: " + m++);
+//        Log.i(TAG, "CAPTURE PROGRESSED: " + m++);
     }
 
     @Override
     public void onCaptureCompleted( CameraCaptureSession session,
                                     CaptureRequest request,
                                     TotalCaptureResult result) {
-        Log.i(TAG, "CAPTURE COMPLETED: " + m++);
+//        Log.i(TAG, "CAPTURE COMPLETED: " + m++);
+        m++;
         if (m == WAIT_FRAMES) {
+        Log.i(TAG, "Switching Surfaces");
             try {
+                session.stopRepeating();
                 // Change the surface of the request session to use the real camera surface and start saving the real pictures
                 Surface surface = cameraService.getImageReader().getSurface();
                 CaptureRequest captureRequest = cameraService.createCaptureRequest(surface);
-                cameraService.getCameraCaptureSession().setRepeatingRequest(captureRequest, null, null);
+                session.setRepeatingRequest(captureRequest, null, cameraService.getmBackgroundHandler());
             } catch (CameraAccessException e) {
                 e.printStackTrace();
             }

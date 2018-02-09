@@ -24,7 +24,7 @@ public class CameraCaptureSessionStateCallback extends CameraCaptureSession.Stat
         cameraService.setCameraCaptureSession(session);
         try {
             // In the beginning, the capture request works with a dummy surface while the real camera is adjusting
-            session.setRepeatingRequest(cameraService.createCaptureRequest(cameraService.getmDummySurface()),
+            session.setRepeatingRequest(cameraService.createCaptureRequest(cameraService.getImageReader().getSurface()),
                     cameraService.getCameraCaptureSessionCaptureCallback(), cameraService.getmBackgroundHandler());
         } catch (CameraAccessException e) {
             Log.e(TAG, e.getMessage());

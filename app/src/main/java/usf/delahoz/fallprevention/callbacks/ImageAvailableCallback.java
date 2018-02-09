@@ -40,7 +40,7 @@ public class ImageAvailableCallback implements ImageReader.OnImageAvailableListe
 
     @Override
     public void onImageAvailable(ImageReader reader) {
-        Log.d(TAG," onImageAvailable: Processing Image using mode " + mode);
+//        Log.d(TAG," onImageAvailable: Processing Image using mode " + mode);
             /* the following variables are used to convert the data we get to bytes,
             * and re-construct them to finally create and save an image file*/
         Image img;
@@ -49,6 +49,7 @@ public class ImageAvailableCallback implements ImageReader.OnImageAvailableListe
         img = reader.acquireLatestImage();
             /*the full code below would also have "if-else" or "else" statements
             * to check for other types of retrieved images/files */
+        if (img == null) return;
         if (img.getFormat() == ImageFormat.JPEG) {
             //check if we have external storage to write to. if we do, save acquired image
             if (isExternalStorageWritable())
@@ -60,8 +61,7 @@ public class ImageAvailableCallback implements ImageReader.OnImageAvailableListe
                     Mat im = createInputMat(img);
                     // The two following lines send the image captured to the NN model in the Android app and saves the output
                     //mat.SaveImage(fin,System.currentTimeMillis()); //Save the output image
-
-                    Log.d(TAG,"Processing Image using mode " + mode);
+                    ImageTools.SaveImage(im,System.currentTimeMillis());
                     switch (mode){
                         case LOCAL:
 //                            Mat fin = detector.performDetection(im);
@@ -104,7 +104,7 @@ public class ImageAvailableCallback implements ImageReader.OnImageAvailableListe
         imgMat = imdecode(m, IMREAD_COLOR);
         // We need to resize the image because the floor detection model expects an input
         // image with dimensions 500x500
-        Size szResized = new Size(500,500);
+        Size szResized = new Size(240,240);
         Mat mSource = imgMat;
         Mat mResised = new Mat();
         Imgproc.resize(mSource, mResised, szResized,0,0, Imgproc.INTER_AREA);

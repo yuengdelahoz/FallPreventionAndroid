@@ -122,17 +122,17 @@ public class Camera2Service extends Service {
         Log.i(TAG, "onCreate from camera service");
         super.onCreate();
         //intent to be used with the "main" class of the app
-        Intent mainActivity = new Intent(this, Camera_Activity.class);
-        final Notification.Builder mBuilder = new Notification.Builder(this).setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle("Camera Service Notification")
-                .setContentText("Processing images in the background");
-        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
-        stackBuilder.addParentStack(Camera_Activity.class);
-        stackBuilder.addNextIntent(mainActivity);
-        PendingIntent pendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
-        mBuilder.setContentIntent(pendingIntent);
-
-        startForeground(41413, mBuilder.build());
+//        Intent mainActivity = new Intent(this, Camera_Activity.class);
+//        final Notification.Builder mBuilder = new Notification.Builder(this).setSmallIcon(R.mipmap.ic_launcher)
+//                .setContentTitle("Camera Service Notification")
+//                .setContentText("Processing images in the background");
+//        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+//        stackBuilder.addParentStack(Camera_Activity.class);
+//        stackBuilder.addNextIntent(mainActivity);
+//        PendingIntent pendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
+//        mBuilder.setContentIntent(pendingIntent);
+//
+//        startForeground(41413, mBuilder.build());
     }
 
     public File getAlbumStorageDir(String albumName) {
@@ -206,7 +206,7 @@ public class Camera2Service extends Service {
         CameraManager manager = (CameraManager) getSystemService(CAMERA_SERVICE);
         try {
             imageReader = ImageReader.newInstance(240, 240, ImageFormat.JPEG, 2);
-            imageReader.setOnImageAvailableListener(onImageAvailableListener, mBackgroundHandler);
+            imageReader.setOnImageAvailableListener(onImageAvailableListener,null);
             Log.i(TAG, "onStartCommand");
             if (!mCameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
                 throw new RuntimeException("Time out waiting to lock camera opening.");

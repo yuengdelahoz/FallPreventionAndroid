@@ -42,9 +42,9 @@ public class ImageTools {
 
     }
 
-    public void SaveImage(Mat img, long name) { //type of 'name' was String. Changed to long
+    public static void SaveImage(Mat img, long name) { //type of 'name' was String. Changed to long
         Log.i("OpenCVLoad", "ImageTools: SaveImage");
-        String dirName = "Cam 2 Pictures";
+        String dirName = "Cam2Pictures";
         File ph = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), dirName);
         if (!ph.exists()) {
             ph.mkdirs();
