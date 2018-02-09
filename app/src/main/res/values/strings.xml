@@ -1,4 +1,8 @@
 <resources>
-    <string name="app_name">WaterDetectionAndroid</string>
+    <string name="app_name">Fall Prevention NN</string>
     <string name="launch">Launch</string>
+    <string-array name="operation_modes">
+        <item>Local</item>
+        <item>WebAPI</item>
+    </string-array>
 </resources>

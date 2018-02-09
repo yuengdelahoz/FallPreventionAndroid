@@ -24,17 +24,23 @@ import static org.opencv.imgcodecs.Imgcodecs.imdecode;
 /* the following acquires an image reader from the listener. this in turn lets us call the
         * method to acquire the latest image*/
 public class ImageAvailableCallback implements ImageReader.OnImageAvailableListener {
+    public enum ImageProcessingMode { WEBAPI, LOCAL};
     private ImageTools mat = new ImageTools();
     private Detector detector;
     private Camera2Service camera2Service;
+    private ImageProcessingMode mode;
+    private String TAG = getClass().getName();
 
-    public ImageAvailableCallback(Detector detector, Camera2Service camera2Service) {
+    public ImageAvailableCallback(Detector detector, Camera2Service camera2Service, ImageProcessingMode mode ) {
         this.detector = detector;
         this.camera2Service = camera2Service;
+        this.mode = mode;
+        Log.d(TAG,"Constructor: Processing Image using mode " + mode);
     }
 
     @Override
     public void onImageAvailable(ImageReader reader) {
+        Log.d(TAG," onImageAvailable: Processing Image using mode " + mode);
             /* the following variables are used to convert the data we get to bytes,
             * and re-construct them to finally create and save an image file*/
         Image img;
@@ -53,11 +59,19 @@ public class ImageAvailableCallback implements ImageReader.OnImageAvailableListe
                 try {
                     Mat im = createInputMat(img);
                     // The two following lines send the image captured to the NN model in the Android app and saves the output
-                    //Mat fin = detector.performDetection(im);
                     //mat.SaveImage(fin,System.currentTimeMillis()); //Save the output image
 
+                    Log.d(TAG,"Processing Image using mode " + mode);
+                    switch (mode){
+                        case LOCAL:
+//                            Mat fin = detector.performDetection(im);
+                            break;
+                        case WEBAPI:
+//                            camera2Service.sendPic(im);
+                            break;
+                    }
+
                     // The following line sends the image captured to the Python WebApi server over the network
-                    camera2Service.sendPic(im);
 
                     img.close();
                 } catch (Exception e) {

@@ -14,10 +14,11 @@ public class Camera_Activity extends Activity {
     private static final int REQUEST_CAMERA = 113;
 
     private boolean canWrite = false, useCamera = false;
+    private final String TAG = getClass().getName();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.i("state", "onCreate from camera activity");
+        Log.i(TAG, "onCreate from camera activity");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera_);
         final Intent processImage = new Intent(this,Camera2Service.class);

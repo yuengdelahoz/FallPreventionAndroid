@@ -10,7 +10,7 @@ import usf.delahoz.fallprevention.Camera2Service;
 
 /*the following is a callback object for the states of the camera device*/
 public class CameraStateCallback extends CameraDevice.StateCallback {
-    private final static String TAG = "Camera State Callback";
+    private final String TAG = getClass().getName();
     private Camera2Service cameraService;
 
     public CameraStateCallback(Camera2Service cameraService) {

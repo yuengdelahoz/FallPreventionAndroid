@@ -18,6 +18,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
+import android.provider.ContactsContract;
 import android.util.Base64;
 import android.util.Log;
 import android.view.Surface;
@@ -57,6 +58,8 @@ import usf.delahoz.fallprevention.tfclassification.FileUtils;
 import static org.opencv.imgcodecs.Imgcodecs.imread;
 import static org.opencv.imgcodecs.Imgcodecs.imwrite;
 
+import usf.delahoz.fallprevention.callbacks.ImageAvailableCallback.ImageProcessingMode;
+
 /**
  * Created by Panos on 11/11/2016.
  */
@@ -79,7 +82,7 @@ public class Camera2Service extends Service {
      * the session for the capture session of the camera,an image reader to handle the image,
      * a handler thread to run the service on a separate thread to not block the ui,
      * and a handler to run with the new thread*/
-    private static final String TAG = "Camera2Service";
+    private final String TAG = this.getClass().getName();
     private static final int CAMERA = CameraCharacteristics.LENS_FACING_BACK;
     private CameraDevice cameraDevice;
     private CameraCaptureSession session;
@@ -87,6 +90,7 @@ public class Camera2Service extends Service {
     private HandlerThread mBackgroundThread;
     private Handler mBackgroundHandler;
     private CameraCharacteristics mCharacteristics;
+
     // Callbacks
     private OpenCvCallback opencv_callback = new OpenCvCallback(this);
     private CameraStateCallback cameraStateCallback = new CameraStateCallback(this);
@@ -127,8 +131,7 @@ public class Camera2Service extends Service {
         stackBuilder.addNextIntent(mainActivity);
         PendingIntent pendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
         mBuilder.setContentIntent(pendingIntent);
-        this.onImageAvailableListener =  new ImageAvailableCallback(DetectorFactory.createFloorDetector(getAssets(), getAlbumStorageDir("Exec times"), isExternalStorageWritable()),
-                this);
+
         startForeground(41413, mBuilder.build());
     }
 
@@ -178,19 +181,31 @@ public class Camera2Service extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.e(TAG,"Current thread is " + Thread.currentThread().getName());
         Log.i(TAG, "onStartCommand from camera service");
+        /*
+        Instantiating callback that handles how images are processed once they are available.
+        */
+        String op_mode = intent.getStringExtra("operation_mode");
+        ImageProcessingMode image_processing_mode = op_mode.toLowerCase().contains("local")? ImageProcessingMode.LOCAL: ImageProcessingMode.WEBAPI;
+        onImageAvailableListener =  new ImageAvailableCallback(DetectorFactory.createFloorDetector(getAssets(),
+                getAlbumStorageDir("Exec times"),
+                isExternalStorageWritable()),
+                this,
+                image_processing_mode);
+
         if (!OpenCVLoader.initDebug()) {
-            Log.d("OpenCV", "Internal OpenCV library not found. Using OpenCV Manager for initialization");
             OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_2_0, this, opencv_callback);
+            Log.d(TAG, "Internal OpenCV library not found. Using OpenCV Manager for initialization");
         } else {
-            Log.d("OpenCV", "OpenCV library found inside package. Using it!");
+            Log.d(TAG, "OpenCV library found inside package. Using it!");
             opencv_callback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
         }
+
         //background thread started, so we do not block ui thread
         startBackgroundThread();
-        Toast.makeText(this, "service starting", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Service starting", Toast.LENGTH_SHORT).show();
         CameraManager manager = (CameraManager) getSystemService(CAMERA_SERVICE);
         try {
-            imageReader = ImageReader.newInstance(500, 500, ImageFormat.JPEG, 2);
+            imageReader = ImageReader.newInstance(240, 240, ImageFormat.JPEG, 2);
             imageReader.setOnImageAvailableListener(onImageAvailableListener, mBackgroundHandler);
             Log.i(TAG, "onStartCommand");
             if (!mCameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {

@@ -24,8 +24,8 @@ public class CameraCaptureSessionCaptureCallback extends CameraCaptureSession.Ca
      */
     private static final int WAIT_FRAMES = 120;
     private int m = 0;
-    private final static String TAG = "Camera Capture callback";
     private Camera2Service cameraService;
+    private final String TAG = getClass().getName();
 
     public CameraCaptureSessionCaptureCallback(Camera2Service cameraService) {
         this.cameraService = cameraService;

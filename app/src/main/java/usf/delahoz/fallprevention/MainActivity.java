@@ -8,7 +8,9 @@ import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 public class MainActivity extends Activity {
@@ -16,12 +18,14 @@ public class MainActivity extends Activity {
     private static final int REQUEST_WRITE_STORAGE = 112;
     private static final int REQUEST_CAMERA = 113;
     private static final int REQUEST_READ_STORAGE = 114;
+    private String TAG = getClass().getName();
 
     boolean canWrite = false;
     boolean useCamera = false;
     boolean canRead = false;
 
     private Button btn;
+    private Spinner operation_mode;
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[], int [] grantResults){
@@ -73,11 +77,22 @@ public class MainActivity extends Activity {
             requestPermissions(new String[]{Manifest.permission.CAMERA}, REQUEST_CAMERA);
         }
 
+
+//        Choose to run models locally or through the webapi
+        operation_mode = (Spinner) findViewById(R.id.operation_mode);
+        // Create an ArrayAdapter using the string array and a default spinner layout
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
+                R.array.operation_modes, android.R.layout.simple_spinner_item);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        operation_mode.setAdapter(adapter);
+
+
         final Intent processImage = new Intent(this,Camera2Service.class);
         btn = (Button) findViewById(R.id.startBtn);
         btn.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
+                processImage.putExtra("operation_mode",operation_mode.getSelectedItem().toString());
                 if (btn.getText().toString().equals("Launch")) {  //Start
                     startService(processImage);
                     btn.setText("Stop");
