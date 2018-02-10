@@ -4,14 +4,14 @@ import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.util.Log;
 
-import usf.delahoz.fallprevention.Camera2Service;
+import usf.delahoz.fallprevention.ImageCollectorService;
 
 /*the following is a callback object about the state of the camera capture session*/
 public class CameraCaptureSessionStateCallback extends CameraCaptureSession.StateCallback  {
     private final String TAG = getClass().getName();
-    private Camera2Service cameraService;
+    private ImageCollectorService cameraService;
 
-    public CameraCaptureSessionStateCallback(Camera2Service cameraService) {
+    public CameraCaptureSessionStateCallback(ImageCollectorService cameraService) {
         this.cameraService = cameraService;
     }
 

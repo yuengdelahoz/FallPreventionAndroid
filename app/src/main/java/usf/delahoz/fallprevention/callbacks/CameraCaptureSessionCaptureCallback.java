@@ -8,7 +8,7 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.util.Log;
 import android.view.Surface;
 
-import usf.delahoz.fallprevention.Camera2Service;
+import usf.delahoz.fallprevention.ImageCollectorService;
 
 /**
  * The capture callback has methods that are called when a capture has been progressed and when a
@@ -24,10 +24,10 @@ public class CameraCaptureSessionCaptureCallback extends CameraCaptureSession.Ca
      */
     private static final int WAIT_FRAMES = 120;
     private int m = 0;
-    private Camera2Service cameraService;
+    private ImageCollectorService cameraService;
     private final String TAG = getClass().getName();
 
-    public CameraCaptureSessionCaptureCallback(Camera2Service cameraService) {
+    public CameraCaptureSessionCaptureCallback(ImageCollectorService cameraService) {
         this.cameraService = cameraService;
     }
 

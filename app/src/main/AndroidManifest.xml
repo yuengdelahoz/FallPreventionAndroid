@@ -36,7 +36,7 @@
         </activity>
 
         <service
-            android:name="usf.delahoz.fallprevention.Camera2Service"
+            android:name="usf.delahoz.fallprevention.ImageCollectorService"
             android:enabled="true"
             android:exported="false"
             android:process=":com.myprocess"></service>

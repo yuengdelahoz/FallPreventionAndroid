@@ -4,7 +4,6 @@ import android.content.Context;
 import android.graphics.ImageFormat;
 import android.media.Image;
 import android.media.ImageReader;
-import android.os.Environment;
 import android.util.Log;
 
 import org.opencv.core.CvType;
@@ -15,7 +14,6 @@ import org.opencv.imgproc.Imgproc;
 
 import java.nio.ByteBuffer;
 
-import usf.delahoz.fallprevention.Camera2Service;
 import usf.delahoz.fallprevention.Utils;
 import usf.delahoz.fallprevention.nn_models.Detector;
 import usf.delahoz.fallprevention.nn_models.DetectorFactory;

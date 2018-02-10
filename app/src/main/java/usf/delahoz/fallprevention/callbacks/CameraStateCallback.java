@@ -6,14 +6,14 @@ import android.util.Log;
 
 import java.util.Arrays;
 
-import usf.delahoz.fallprevention.Camera2Service;
+import usf.delahoz.fallprevention.ImageCollectorService;
 
 /*the following is a callback object for the states of the camera device*/
 public class CameraStateCallback extends CameraDevice.StateCallback {
     private final String TAG = getClass().getName();
-    private Camera2Service cameraService;
+    private ImageCollectorService cameraService;
 
-    public CameraStateCallback(Camera2Service cameraService) {
+    public CameraStateCallback(ImageCollectorService cameraService) {
         this.cameraService = cameraService;
     }
 

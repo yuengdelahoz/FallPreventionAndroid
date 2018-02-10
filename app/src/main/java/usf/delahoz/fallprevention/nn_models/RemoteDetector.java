@@ -1,10 +1,7 @@
 package usf.delahoz.fallprevention.nn_models;
 
 import android.content.Context;
-import android.hardware.camera2.CameraAccessException;
-import android.hardware.camera2.CaptureRequest;
 import android.util.Base64;
-import android.view.Surface;
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
@@ -24,7 +21,6 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
-import usf.delahoz.fallprevention.Camera2Service;
 import usf.delahoz.fallprevention.Utils;
 
 /**

@@ -68,7 +68,7 @@ import usf.delahoz.fallprevention.nn_models.DetectorFactory;
  * Enjoy!
  * **********************************************************************************/
 //class definition for the camera service, extending a service
-public class Camera2Service extends Service {
+public class ImageCollectorService extends Service {
     /*the following variables define the tag for logs, the camera, the camera device,
      * the session for the capture session of the camera,an image reader to handle the image,
      * a handler thread to run the service on a separate thread to not block the ui,
@@ -92,7 +92,7 @@ public class Camera2Service extends Service {
      * A {@link Semaphore} to prevent the app from exiting before closing the camera.
      */
     private Semaphore mCameraOpenCloseLock = new Semaphore(1);
-    // When the Camera2Service service is started, it used to instantly make requests to the phone
+    // When the ImageCollectorService service is started, it used to instantly make requests to the phone
     // camera. In some devices the camera takes a little to "warm up" or autocalibrate, and the output
     // pictures would be too dark and out of focus. For this reason, while the camera is auto-adjusting,
     // we make the requests to a dummy surface and these requests will not generate pictures. After WAITING_FRAMES
@@ -153,7 +153,7 @@ public class Camera2Service extends Service {
         */
         String op_mode = intent.getStringExtra("operation_mode");
         ImageProcessingMode image_processing_mode = op_mode.toLowerCase().contains("local")? ImageProcessingMode.LOCAL: ImageProcessingMode.WEBAPI;
-        onImageAvailableListener =  new ImageAvailableCallback(image_processing_mode);
+        onImageAvailableListener =  new ImageAvailableCallback(image_processing_mode,this);
 
         if (!OpenCVLoader.initDebug()) {
             OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_2_0, this, opencv_callback);

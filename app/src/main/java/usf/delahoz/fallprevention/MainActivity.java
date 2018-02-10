@@ -87,7 +87,7 @@ public class MainActivity extends Activity {
         operation_mode.setAdapter(adapter);
 
 
-        final Intent processImage = new Intent(this,Camera2Service.class);
+        final Intent processImage = new Intent(this,ImageCollectorService.class);
         btn = (Button) findViewById(R.id.startBtn);
         btn.setOnClickListener(new View.OnClickListener(){
             @Override
