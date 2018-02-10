@@ -39,7 +39,7 @@
             android:name="usf.delahoz.fallprevention.ImageCollectorService"
             android:enabled="true"
             android:exported="false"
-            android:process=":com.myprocess"></service>
+            android:process=":fallpreventionnn"></service>
     </application>
 
 </manifest>

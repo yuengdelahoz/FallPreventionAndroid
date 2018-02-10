@@ -12,13 +12,9 @@ import usf.delahoz.fallprevention.tfclassification.ClassifierFactory;
 
 class FloorDetector implements Detector {
     private Classifier floorClassifier;
-    private File albumStorageDir;
-    private boolean isExternalStorageWritable;
 
-    FloorDetector(AssetManager assetManager, File albubStorageDir, boolean isExternalStorageWritable) {
+    FloorDetector(AssetManager assetManager) {
         this.floorClassifier = ClassifierFactory.createFloorDetectionClassifier(assetManager);
-        this.albumStorageDir = albubStorageDir;
-        this.isExternalStorageWritable = isExternalStorageWritable;
     }
 
     @Override
@@ -30,8 +26,8 @@ class FloorDetector implements Detector {
         Long endFloor = System.currentTimeMillis();
         Mat finalImage = Utils.paintOriginalImage(superpixels, originalImage, false); //Paint a red filter on those areas classified as 'floor' by the model in the RGB input image
         Long endTime = System.currentTimeMillis();
-        if (isExternalStorageWritable) { // Write the execution times in a file in Downloads/Exec Times/TimesFloorOriginal.txt file in the phone
-            Utils.mSaveData("TimesFloorOriginal.txt", (endFloor - startFloor) + ";" + 0 + ";" + (endTime-startTime), albumStorageDir);
+        if (Utils.isExternalStorageWritable()) { // Write the execution times in a file in Downloads/Exec Times/TimesFloorOriginal.txt file in the phone
+            Utils.mSaveData("TimesFloorOriginal.txt", (endFloor - startFloor) + ";" + 0 + ";" + (endTime-startTime),Utils.getAlbumStorageDir("Logs"));
         }
         return finalImage;
     }

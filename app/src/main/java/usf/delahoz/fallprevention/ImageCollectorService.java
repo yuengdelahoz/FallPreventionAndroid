@@ -169,7 +169,7 @@ public class ImageCollectorService extends Service {
         CameraManager manager = (CameraManager) getSystemService(CAMERA_SERVICE);
         try {
             imageReader = ImageReader.newInstance(240, 240, ImageFormat.JPEG, 2);
-            imageReader.setOnImageAvailableListener(onImageAvailableListener,null);
+            imageReader.setOnImageAvailableListener(onImageAvailableListener,getmBackgroundHandler());
             Log.i(TAG, "onStartCommand");
             if (!mCameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
                 throw new RuntimeException("Time out waiting to lock camera opening.");
@@ -180,7 +180,7 @@ public class ImageCollectorService extends Service {
             * so we can ignore the presented error.
             *
             * or not, whatever...*/
-            manager.openCamera(getCamera(manager), cameraStateCallback, null); /** ignore error. warns about checking permissions. this happens in main*/
+            manager.openCamera(getCamera(manager), cameraStateCallback, getmBackgroundHandler()); /** ignore error. warns about checking permissions. this happens in main*/
         } catch (CameraAccessException e) {
             Log.e(TAG, e.getMessage());
         } catch (InterruptedException e) {

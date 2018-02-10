@@ -1,6 +1,7 @@
 package usf.delahoz.fallprevention;
 
 
+import android.media.Image;
 import android.os.Environment;
 import android.util.Base64;
 import android.util.Log;
@@ -17,11 +18,14 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import static org.opencv.core.CvType.CV_32FC3;
 import static org.opencv.core.CvType.CV_8U;
 import static org.opencv.core.CvType.CV_8UC1;
 import static org.opencv.core.CvType.CV_8UC3;
+import static org.opencv.imgcodecs.Imgcodecs.IMREAD_COLOR;
+import static org.opencv.imgcodecs.Imgcodecs.imdecode;
 
 /**
  * Created by Yueng
@@ -37,25 +41,19 @@ public class Utils {
     public static void SaveImage(String image) {
         byte[] decodedString = Base64.decode(image, Base64.DEFAULT);
         MatOfByte bytes = new MatOfByte(decodedString);
-        Mat mat = Imgcodecs.imdecode(bytes, Imgcodecs.IMREAD_UNCHANGED);
+        Mat mat = imdecode(bytes, Imgcodecs.IMREAD_UNCHANGED);
         SaveImage(mat, System.currentTimeMillis());
     }
 
     public static void SaveImage(Mat img, long name) { //type of 'name' was String. Changed to long
-        Log.i(TAG, "Utils: SaveImage");
-        String dirName = "Cam2Pictures";
-        File ph = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), dirName);
-        if (!ph.exists()) {
-            ph.mkdirs();
-        }
 
-        File file = new File(ph, name + ".jpg");
+        File file = new File(getAlbumStorageDir("cam2pics"), name + ".jpg");
         if (file.exists())
             file.delete();
 
         boolean bool = Imgcodecs.imwrite(file.toString(), img);
         if (bool == true) {
-            Log.i(TAG, "Utils: SaveImage: Success writing image");
+            Log.d(TAG, "Utils: SaveImage: Success writing image " + file.getAbsolutePath());
         } else
             Log.d(TAG, "Utils: SaveImage: Failed to write image");
 
@@ -158,7 +156,7 @@ public class Utils {
         File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),albumName);
         if (!file.mkdirs()) {
             // Shows this error also when directory already existed
-            Log.e("Error", "Directory not created");
+            Log.d("Error", "Directory not created");
         }
         return file;
     }
@@ -171,5 +169,50 @@ public class Utils {
         return false;
     }
 
+    /**
+     * Creates a base64 encoded image from the captured image
+     * @param im - The map object representing the captured image
+     * @return - The image encoded as base64 string
+     */
+    public static String createEncodedImage(Mat im) {
+        MatOfByte matOfByte = new MatOfByte();
+        Imgcodecs.imencode(".jpg", im, matOfByte);
+        byte[] imageBytes = matOfByte.toArray();
+        String encodedImage = Base64.encodeToString(imageBytes, Base64.DEFAULT);
+        return encodedImage;
+    }
 
+    /**
+     * From the captured image it creates the 500x500 input Mat object
+     * @param img - Captured image
+     * @return - TF Model input mat
+     */
+    public static Mat createInputMat(Image img) {
+        /*bytebuffer is a class that allows us to read/write bytes
+                    * here it is used with "Save(... , ...)" to assign these
+                    * collected bytes from the image to the created file from "CreateJpeg()"*/
+        ByteBuffer buffer = img.getPlanes()[0].getBuffer();
+        int rem = buffer.remaining();
+        byte[] bytes = new byte[buffer.remaining()];
+        buffer.get(bytes);
+        // Obtain a float array with the values of the image captured. The classifier
+        // uses this float array to perform the inference
+        Mat buf = new Mat(img.getHeight(),img.getWidth(), CvType.CV_8UC3);
+        MatOfByte m = new MatOfByte(bytes);
+        Mat imgMat = imdecode(m, Imgcodecs.IMREAD_UNCHANGED);
+        Log.d(TAG,"Mat height, width: " + imgMat.rows() +", "+imgMat.cols() + " Image height, width: " + img.getHeight() + ", " + img.getWidth());
+        return imgMat;
+
+//        Mat cropped = imgMat.submat(0,239,39,279);
+//        return cropped;
+//        // We need to resize the image because the floor detection model expects an input
+//        // image with dimensions 240x240
+//        Size szResized = new Size(240,240);
+//        Mat mSource = imgMat;
+//        Mat mResised = new Mat();
+//        Imgproc.resize(mSource, mResised, szResized,0,0, Imgproc.INTER_AREA);
+//        Mat im = new Mat();
+//        mResised.assignTo(im, CvType.CV_8UC3);
+//        return im;
+    }
 }

@@ -27,7 +27,7 @@ public class CameraStateCallback extends CameraDevice.StateCallback {
             * camera is auto-adjusting or warming up, and the read camera surface to use later */
         try {
             cameraService.getCameraDevice().createCaptureSession(Arrays.asList(cameraService.getmDummySurface(),
-                    cameraService.getImageReader().getSurface()), cameraService.getCameraCaptureSessionStateCallback(), null);
+                    cameraService.getImageReader().getSurface()), cameraService.getCameraCaptureSessionStateCallback(), cameraService.getmBackgroundHandler());
         } catch (CameraAccessException e) {
             Log.e(TAG, e.getMessage());
             cameraService.stopBackgroundThread();

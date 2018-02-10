@@ -47,7 +47,6 @@ public class CameraCaptureSessionCaptureCallback extends CameraCaptureSession.Ca
         if (m == WAIT_FRAMES) {
         Log.i(TAG, "Switching Surfaces");
             try {
-                session.stopRepeating();
                 // Change the surface of the request session to use the real camera surface and start saving the real pictures
                 Surface surface = cameraService.getImageReader().getSurface();
                 CaptureRequest captureRequest = cameraService.createCaptureRequest(surface);
