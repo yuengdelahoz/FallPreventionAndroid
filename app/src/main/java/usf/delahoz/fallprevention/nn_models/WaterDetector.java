@@ -25,7 +25,7 @@ class WaterDetector implements Detector {
     }
 
     @Override
-    public Mat runInference(Mat originalImage) {
+    public float[] runInference(Mat originalImage) {
         Long startTime = System.currentTimeMillis();
         Mat edgeImage = Utils.createLaplacianImage(originalImage); //Compute the Laplacian edge detection image and add it as the fourth dimension of the input of the water detection model
         List<Mat> mats = new ArrayList<>();
@@ -43,6 +43,6 @@ class WaterDetector implements Detector {
         if (isExternalStorageWritable) { // Write the execution times in a file in Downloads/Exec Times/TimesWaterOriginal.txt file in the phone
             Utils.mSaveData("TimesWaterOriginal.txt", 0 + ";" + (endWater-startWater) + ";" + (endTime-startTime), albumStorageDir);
         }
-        return finalImage;
+        return superpixels;
     }
 }

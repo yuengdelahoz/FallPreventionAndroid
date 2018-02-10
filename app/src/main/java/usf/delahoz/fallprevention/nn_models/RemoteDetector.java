@@ -35,7 +35,7 @@ public class RemoteDetector implements Detector{
     }
 
     @Override
-    public Mat runInference(Mat image) {
+    public float[] runInference(Mat image) {
         /**
          * This method sends the image to the Python WebAPi and saves the output as a jpg file. It also updates the log file with
          * information useful for debugging purposes (Downloads/Logs/Log.txt)
@@ -44,14 +44,14 @@ public class RemoteDetector implements Detector{
         Log.d(TAG,"Running remote Inference. " + Thread.currentThread().getId());
         final String encodedImage = Utils.createEncodedImage(image);
         startTime = System.currentTimeMillis();
-        JSONObject parm = new JSONObject();
+        JSONObject params = new JSONObject();
         try {
-            parm.put(KEY_IMAGE,encodedImage);
+            params.put(KEY_IMAGE,encodedImage);
         } catch (JSONException e) {
             e.printStackTrace();
         }
         RequestFuture<JSONObject> future = RequestFuture.newFuture();
-        JsonObjectRequest jsonRequest = new JsonObjectRequest(Request.Method.POST, URL,parm,future,future);
+        JsonObjectRequest jsonRequest = new JsonObjectRequest(Request.Method.POST, URL,params,future,future);
 
         //Creating a Request Queue
         RequestQueue requestQueue = Volley.newRequestQueue(this.context);
@@ -70,6 +70,11 @@ public class RemoteDetector implements Detector{
             e.printStackTrace();
         }
         return null;
+    }
+
+    @Override
+    public long getInferenceRuntime() {
+        return 0;
     }
 
 }

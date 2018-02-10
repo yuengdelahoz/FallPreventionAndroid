@@ -27,7 +27,7 @@ class WaterFloorOp2Detector implements Detector {
     }
 
     @Override
-    public Mat runInference(Mat originalImage) {
+    public float[] runInference(Mat originalImage) {
         // Perform the floor detection and create the color image from its output
         Long startTime = System.currentTimeMillis();
         float[] floorInputValues = Utils.convertMatToFloatArr(originalImage);
@@ -45,7 +45,7 @@ class WaterFloorOp2Detector implements Detector {
         if (isExternalStorageWritable) { // Write the execution times in a file in Downloads/Exec Times/TimesWaterOp1.txt file in the phone
             Utils.mSaveData("TimesWaterOp2.txt", (endFloor-startFloor) + ";" + (endWater-startWater) + ";" + (endTime-startTime), albumStorageDir);
         }
-        return waterImage;
+        return waterSuperpixels;
     }
 
     /**

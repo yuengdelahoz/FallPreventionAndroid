@@ -4,8 +4,6 @@ import android.content.res.AssetManager;
 
 import org.opencv.core.Mat;
 
-import java.io.File;
-
 import usf.delahoz.fallprevention.Utils;
 import usf.delahoz.fallprevention.tfclassification.Classifier;
 import usf.delahoz.fallprevention.tfclassification.ClassifierFactory;
@@ -18,7 +16,7 @@ class FloorDetector implements Detector {
     }
 
     @Override
-    public Mat runInference(Mat originalImage) {
+    public float[] runInference(Mat originalImage) {
         Long startTime = System.currentTimeMillis();
         float[] inputValues = Utils.convertMatToFloatArr(originalImage);
         Long startFloor = System.currentTimeMillis();
@@ -29,6 +27,6 @@ class FloorDetector implements Detector {
         if (Utils.isExternalStorageWritable()) { // Write the execution times in a file in Downloads/Exec Times/TimesFloorOriginal.txt file in the phone
             Utils.mSaveData("TimesFloorOriginal.txt", (endFloor - startFloor) + ";" + 0 + ";" + (endTime-startTime),Utils.getAlbumStorageDir("Logs"));
         }
-        return finalImage;
+        return superpixels;
     }
 }
