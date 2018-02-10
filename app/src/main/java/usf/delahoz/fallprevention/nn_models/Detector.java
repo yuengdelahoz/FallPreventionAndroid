@@ -1,9 +1,9 @@
-package usf.delahoz.fallprevention.detection.modes;
+package usf.delahoz.fallprevention.nn_models;
 
 import org.opencv.core.Mat;
 
 import java.io.Serializable;
 
 public interface Detector extends Serializable {
-    Mat performDetection(Mat originalImage);
+    Mat runInference(Mat originalImage);
 }

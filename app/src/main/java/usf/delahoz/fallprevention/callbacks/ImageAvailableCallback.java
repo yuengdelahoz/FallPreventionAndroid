@@ -1,5 +1,6 @@
 package usf.delahoz.fallprevention.callbacks;
 
+import android.content.Context;
 import android.graphics.ImageFormat;
 import android.media.Image;
 import android.media.ImageReader;
@@ -15,8 +16,9 @@ import org.opencv.imgproc.Imgproc;
 import java.nio.ByteBuffer;
 
 import usf.delahoz.fallprevention.Camera2Service;
-import usf.delahoz.fallprevention.ImageTools;
-import usf.delahoz.fallprevention.detection.modes.Detector;
+import usf.delahoz.fallprevention.Utils;
+import usf.delahoz.fallprevention.nn_models.Detector;
+import usf.delahoz.fallprevention.nn_models.DetectorFactory;
 
 import static org.opencv.imgcodecs.Imgcodecs.IMREAD_COLOR;
 import static org.opencv.imgcodecs.Imgcodecs.imdecode;
@@ -25,17 +27,21 @@ import static org.opencv.imgcodecs.Imgcodecs.imdecode;
         * method to acquire the latest image*/
 public class ImageAvailableCallback implements ImageReader.OnImageAvailableListener {
     public enum ImageProcessingMode { WEBAPI, LOCAL};
-    private ImageTools mat = new ImageTools();
+    private Utils mat = new Utils();
     private Detector detector;
-    private Camera2Service camera2Service;
-    private ImageProcessingMode mode;
     private String TAG = getClass().getName();
+    private Object lock = new Object();
 
-    public ImageAvailableCallback(Detector detector, Camera2Service camera2Service, ImageProcessingMode mode ) {
-        this.detector = detector;
-        this.camera2Service = camera2Service;
-        this.mode = mode;
+    public ImageAvailableCallback(ImageProcessingMode mode , Context context) {
         Log.d(TAG,"Constructor: Processing Image using mode " + mode);
+        switch (mode){
+            case LOCAL:
+//                this.detector = DetectorFactory.createFloorDetector(null,null);
+                break;
+            case WEBAPI:
+                this.detector = DetectorFactory.createRemoteDetector(context);
+                break;
+        }
     }
 
     @Override
@@ -52,30 +58,16 @@ public class ImageAvailableCallback implements ImageReader.OnImageAvailableListe
         if (img == null) return;
         if (img.getFormat() == ImageFormat.JPEG) {
             //check if we have external storage to write to. if we do, save acquired image
-            if (isExternalStorageWritable())
+            if (Utils.isExternalStorageWritable())
             {
-                    /*method to create a new file/item/object and set
-                    it up for a JPEG assignment*/
-                //imgFile = CreateJPEG();
                 try {
                     Mat im = createInputMat(img);
-                    // The two following lines send the image captured to the NN model in the Android app and saves the output
-                    //mat.SaveImage(fin,System.currentTimeMillis()); //Save the output image
-                    ImageTools.SaveImage(im,System.currentTimeMillis());
-                    switch (mode){
-                        case LOCAL:
-//                            Mat fin = detector.performDetection(im);
-                            break;
-                        case WEBAPI:
-//                            camera2Service.sendPic(im);
-                            break;
+                    synchronized(lock) {
+                        this.detector.runInference(im);
                     }
-
-                    // The following line sends the image captured to the Python WebApi server over the network
-
+                    Utils.SaveImage(im,System.currentTimeMillis());
                     img.close();
                 } catch (Exception e) {
-                    Log.i("Exception e", "ImageFormat.JPEG,,,,,,," + e.getMessage());
                     e.getStackTrace();
                 }
             }
@@ -94,16 +86,15 @@ public class ImageAvailableCallback implements ImageReader.OnImageAvailableListe
         ByteBuffer buffer = img.getPlanes()[0].getBuffer();
         int h = img.getHeight();
         int w = img.getWidth();
-        Mat imgMat = new Mat(w,h, CvType.CV_32FC3);
 
         byte[] bytes = new byte[buffer.remaining()];
         buffer.get(bytes);
         // Obtain a float array with the values of the image captured. The classifier
         // uses this float array to perform the inference
         MatOfByte m = new MatOfByte(bytes);
-        imgMat = imdecode(m, IMREAD_COLOR);
+        Mat imgMat = imdecode(m, IMREAD_COLOR);
         // We need to resize the image because the floor detection model expects an input
-        // image with dimensions 500x500
+        // image with dimensions 240x240
         Size szResized = new Size(240,240);
         Mat mSource = imgMat;
         Mat mResised = new Mat();
@@ -111,15 +102,6 @@ public class ImageAvailableCallback implements ImageReader.OnImageAvailableListe
         Mat im = new Mat();
         mResised.assignTo(im, CvType.CV_8UC3);
         return im;
-    }
-
-    //checks if there is external storage to write to
-    public boolean isExternalStorageWritable() {
-        String state = Environment.getExternalStorageState();
-        if (Environment.MEDIA_MOUNTED.equals(state)) {
-            return true;
-        }
-        return false;
     }
 
 }

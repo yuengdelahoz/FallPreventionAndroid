@@ -12,7 +12,7 @@ import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
  * provided in order to perform the inference.
  */
 
-class ObjectDetectionClassifier implements Classifier {
+class FallPreventionClassifier implements Classifier {
     private static final String TF_INFERENCE_LIBRARY_NAME = "tensorflow_inference";
     // Path to frozen model
     private final String MODEL_FILE;
@@ -36,9 +36,17 @@ class ObjectDetectionClassifier implements Classifier {
         Log.i("WATER DETECTION", "Inference library loaded");
     }
 
-    public ObjectDetectionClassifier(String modelFile, String inputNodeName, String outputNodeName, String[] outputNodes,
-                                     int outputSize, String keepProbNodeName, float[] keepProbValues, long[] keepProbShape,
-                                     long[] inputTensorShape, AssetManager assetManager) {
+    public FallPreventionClassifier(String modelFile,
+                                    String inputNodeName,
+                                    String outputNodeName,
+                                    String[] outputNodes,
+                                    int outputSize,
+                                    String keepProbNodeName,
+                                    float[] keepProbValues,
+                                    long[] keepProbShape,
+                                    long[] inputTensorShape,
+                                    AssetManager assetManager)
+    {
         if (modelFile == null || modelFile.trim().isEmpty() || inputNodeName == null || inputNodeName.trim().isEmpty()
                 || outputNodeName == null || outputNodeName.trim().isEmpty() || outputNodes == null || outputNodes.length == 0
                 || outputSize < 0 || keepProbNodeName == null || keepProbNodeName.trim().isEmpty() || inputTensorShape == null

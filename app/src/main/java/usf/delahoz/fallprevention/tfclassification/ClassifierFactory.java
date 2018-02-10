@@ -32,9 +32,17 @@ public class ClassifierFactory {
      * @return - The flood detection model
      */
     public static Classifier createFloorDetectionClassifier(AssetManager assetManager) {
-        return new ObjectDetectionClassifier(FLOOR_MODEL_FILE, INPUT_NODE_NAME, OUTPUT_NODE_NAME,
-                OUTPUT_NODES, OUTPUT_SIZE, KEEP_PROB_NODE_NAME, KEEP_PROB_VALUE, KEEP_PROB_TENSOR_SHAPE,
-                FLOOR_INPUT_TENSOR_SHAPE, assetManager);
+        return new FallPreventionClassifier(
+                FLOOR_MODEL_FILE,
+                INPUT_NODE_NAME,
+                OUTPUT_NODE_NAME,
+                OUTPUT_NODES,
+                OUTPUT_SIZE,
+                KEEP_PROB_NODE_NAME,
+                KEEP_PROB_VALUE,
+                KEEP_PROB_TENSOR_SHAPE,
+                FLOOR_INPUT_TENSOR_SHAPE,
+                assetManager);
     }
 
     /**
@@ -43,19 +51,19 @@ public class ClassifierFactory {
      * @return - The water detection model
      */
     public static Classifier createWaterDetectionClassifier(AssetManager assetManager) {
-        return new ObjectDetectionClassifier(WATER_MODEL_FILE, INPUT_NODE_NAME, OUTPUT_NODE_NAME,
+        return new FallPreventionClassifier(WATER_MODEL_FILE, INPUT_NODE_NAME, OUTPUT_NODE_NAME,
                 OUTPUT_NODES, OUTPUT_SIZE, KEEP_PROB_NODE_NAME, KEEP_PROB_VALUE, KEEP_PROB_TENSOR_SHAPE,
                 WATER_INPUT_TENSOR_SHAPE, assetManager);
     }
 
     public static Classifier createWaterFloorOp1DetectionClassifier(AssetManager assetManager) {
-        return new ObjectDetectionClassifier(WATER_FLOOR_OP1_MODEL_FILE, INPUT_NODE_NAME, OUTPUT_NODE_NAME,
+        return new FallPreventionClassifier(WATER_FLOOR_OP1_MODEL_FILE, INPUT_NODE_NAME, OUTPUT_NODE_NAME,
                 OUTPUT_NODES, OUTPUT_SIZE, KEEP_PROB_NODE_NAME, KEEP_PROB_VALUE, KEEP_PROB_TENSOR_SHAPE,
                 WATER_FLOOR_OP1_TENSOR_SHAPE, assetManager);
     }
 
     public static Classifier createWaterFloorOp2DetectionClassifier(AssetManager assetManager) {
-        return new ObjectDetectionClassifier(WATER_FLOOR_OP2_MODEL_FILE, INPUT_NODE_NAME, OUTPUT_NODE_NAME,
+        return new FallPreventionClassifier(WATER_FLOOR_OP2_MODEL_FILE, INPUT_NODE_NAME, OUTPUT_NODE_NAME,
                 OUTPUT_NODES, OUTPUT_SIZE, KEEP_PROB_NODE_NAME, KEEP_PROB_VALUE, KEEP_PROB_TENSOR_SHAPE,
                 WATER_INPUT_TENSOR_SHAPE, assetManager);
     }

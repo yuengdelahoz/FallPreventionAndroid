@@ -1,4 +1,4 @@
-package usf.delahoz.fallprevention.detection.modes;
+package usf.delahoz.fallprevention.nn_models;
 
 import android.content.res.AssetManager;
 
@@ -9,17 +9,15 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import usf.delahoz.fallprevention.Utils;
 import usf.delahoz.fallprevention.tfclassification.Classifier;
 import usf.delahoz.fallprevention.tfclassification.ClassifierFactory;
-import usf.delahoz.fallprevention.tfclassification.FileUtils;
 
 class WaterFloorOp2Detector implements Detector {
     private Classifier waterClassifier;
     private Classifier floorClassifier;
     private File albumStorageDir;
     private boolean isExternalStorageWritable;
-    private ImgUtils imgUtils = new ImgUtils();
-    private FileUtils fileUtils = new FileUtils();
 
     WaterFloorOp2Detector(AssetManager assetManager, File albubStorageDir, boolean isExternalStorageWritable) {
         this.floorClassifier = ClassifierFactory.createFloorDetectionClassifier(assetManager);
@@ -29,23 +27,23 @@ class WaterFloorOp2Detector implements Detector {
     }
 
     @Override
-    public Mat performDetection(Mat originalImage) {
+    public Mat runInference(Mat originalImage) {
         // Perform the floor detection and create the color image from its output
         Long startTime = System.currentTimeMillis();
-        float[] floorInputValues = imgUtils.convertMatToFloatArr(originalImage);
+        float[] floorInputValues = Utils.convertMatToFloatArr(originalImage);
         Long startFloor = System.currentTimeMillis();
         float[] floorSuperpixels = floorClassifier.classifyImage(floorInputValues); //Perform the inference on the input image
         Long endFloor = System.currentTimeMillis();
         // Perform the water detection passing the 4 dimension input (color image from the floor detection model + edge detection)
         Mat inputImage = mergeLayersToCreateInput(floorSuperpixels, originalImage);
-        float[] waterInputValues = imgUtils.convertMatToFloatArr(inputImage);
+        float[] waterInputValues = Utils.convertMatToFloatArr(inputImage);
         Long startWater = System.currentTimeMillis();
         float[] waterSuperpixels = waterClassifier.classifyImage(waterInputValues);
         Long endWater = System.currentTimeMillis();
-        Mat waterImage = imgUtils.paintOriginalImage(waterSuperpixels, originalImage, false); //Paint a red filter on those areas classified as 'water' by the model in the RGB input image
+        Mat waterImage = Utils.paintOriginalImage(waterSuperpixels, originalImage, false); //Paint a red filter on those areas classified as 'water' by the model in the RGB input image
         Long endTime = System.currentTimeMillis();
         if (isExternalStorageWritable) { // Write the execution times in a file in Downloads/Exec Times/TimesWaterOp1.txt file in the phone
-            fileUtils.mSaveData("TimesWaterOp2.txt", (endFloor-startFloor) + ";" + (endWater-startWater) + ";" + (endTime-startTime), albumStorageDir);
+            Utils.mSaveData("TimesWaterOp2.txt", (endFloor-startFloor) + ";" + (endWater-startWater) + ";" + (endTime-startTime), albumStorageDir);
         }
         return waterImage;
     }
@@ -57,9 +55,9 @@ class WaterFloorOp2Detector implements Detector {
      * @return - The mat representing the input of the water detection model
      */
     private Mat mergeLayersToCreateInput(float[] floorSuperpixels, Mat originalImage) {
-        Mat floorImage = imgUtils.paintOriginalImage(floorSuperpixels, originalImage, true);
+        Mat floorImage = Utils.paintOriginalImage(floorSuperpixels, originalImage, true);
         // Compute the Laplacian edge detection on the input image and create the 4 dimension input
-        Mat edgeImage = imgUtils.createLaplacianImage(originalImage);
+        Mat edgeImage = Utils.createLaplacianImage(originalImage);
         List<Mat> mats = new ArrayList<Mat>();
         mats.add(floorImage);
         mats.add(edgeImage);

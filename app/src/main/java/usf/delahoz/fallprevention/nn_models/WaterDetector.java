@@ -1,4 +1,4 @@
-package usf.delahoz.fallprevention.detection.modes;
+package usf.delahoz.fallprevention.nn_models;
 
 import android.content.res.AssetManager;
 
@@ -9,14 +9,12 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import usf.delahoz.fallprevention.Utils;
 import usf.delahoz.fallprevention.tfclassification.Classifier;
 import usf.delahoz.fallprevention.tfclassification.ClassifierFactory;
-import usf.delahoz.fallprevention.tfclassification.FileUtils;
 
 class WaterDetector implements Detector {
     private Classifier classifier;
-    private ImgUtils imgUtils = new ImgUtils();
-    private FileUtils fileUtils = new FileUtils();
     private boolean isExternalStorageWritable;
     private File albumStorageDir;
 
@@ -27,23 +25,23 @@ class WaterDetector implements Detector {
     }
 
     @Override
-    public Mat performDetection(Mat originalImage) {
+    public Mat runInference(Mat originalImage) {
         Long startTime = System.currentTimeMillis();
-        Mat edgeImage = imgUtils.createLaplacianImage(originalImage); //Compute the Laplacian edge detection image and add it as the fourth dimension of the input of the water detection model
+        Mat edgeImage = Utils.createLaplacianImage(originalImage); //Compute the Laplacian edge detection image and add it as the fourth dimension of the input of the water detection model
         List<Mat> mats = new ArrayList<>();
         mats.add(originalImage);
         mats.add(edgeImage);
         Mat input = new Mat();
         Core.merge(mats, input);
 
-        float[] inputValues = imgUtils.convertMatToFloatArr(input);
+        float[] inputValues = Utils.convertMatToFloatArr(input);
         Long startWater = System.currentTimeMillis();
         float[] superpixels = classifier.classifyImage(inputValues); //Perform the inference on the input image
         Long endWater = System.currentTimeMillis();
-        Mat finalImage = imgUtils.paintOriginalImage(superpixels, originalImage, false); // Paint a red filter on those areas classified as 'water' by the model in the RGB input image
+        Mat finalImage = Utils.paintOriginalImage(superpixels, originalImage, false); // Paint a red filter on those areas classified as 'water' by the model in the RGB input image
         Long endTime = System.currentTimeMillis();
         if (isExternalStorageWritable) { // Write the execution times in a file in Downloads/Exec Times/TimesWaterOriginal.txt file in the phone
-            fileUtils.mSaveData("TimesWaterOriginal.txt", 0 + ";" + (endWater-startWater) + ";" + (endTime-startTime), albumStorageDir);
+            Utils.mSaveData("TimesWaterOriginal.txt", 0 + ";" + (endWater-startWater) + ";" + (endTime-startTime), albumStorageDir);
         }
         return finalImage;
     }

@@ -1,9 +1,6 @@
 package usf.delahoz.fallprevention;
 
-import android.app.Notification;
-import android.app.PendingIntent;
 import android.app.Service;
-import android.app.TaskStackBuilder;
 import android.content.Intent;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
@@ -18,7 +15,6 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
-import android.provider.ContactsContract;
 import android.util.Base64;
 import android.util.Log;
 import android.view.Surface;
@@ -51,14 +47,9 @@ import usf.delahoz.fallprevention.callbacks.CameraCaptureSessionCaptureCallback;
 import usf.delahoz.fallprevention.callbacks.CameraCaptureSessionStateCallback;
 import usf.delahoz.fallprevention.callbacks.CameraStateCallback;
 import usf.delahoz.fallprevention.callbacks.ImageAvailableCallback;
-import usf.delahoz.fallprevention.callbacks.OpenCvCallback;
-import usf.delahoz.fallprevention.detection.modes.DetectorFactory;
-import usf.delahoz.fallprevention.tfclassification.FileUtils;
-
-import static org.opencv.imgcodecs.Imgcodecs.imread;
-import static org.opencv.imgcodecs.Imgcodecs.imwrite;
-
 import usf.delahoz.fallprevention.callbacks.ImageAvailableCallback.ImageProcessingMode;
+import usf.delahoz.fallprevention.callbacks.OpenCvCallback;
+import usf.delahoz.fallprevention.nn_models.DetectorFactory;
 
 /**
  * Created by Panos on 11/11/2016.
@@ -112,37 +103,13 @@ public class Camera2Service extends Service {
 
     private String URL ="http://enb302.online:8001/delahoz/";
     private String KEY_IMAGE = "image";
-    private FileUtils fileUtils = new FileUtils();
     private List<Long> requests = new ArrayList<>();
-    private ImageTools imageTools = new ImageTools();
 
     //state of the app once tapped on
     @Override
     public void onCreate() {
         Log.i(TAG, "onCreate from camera service");
         super.onCreate();
-        //intent to be used with the "main" class of the app
-//        Intent mainActivity = new Intent(this, Camera_Activity.class);
-//        final Notification.Builder mBuilder = new Notification.Builder(this).setSmallIcon(R.mipmap.ic_launcher)
-//                .setContentTitle("Camera Service Notification")
-//                .setContentText("Processing images in the background");
-//        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
-//        stackBuilder.addParentStack(Camera_Activity.class);
-//        stackBuilder.addNextIntent(mainActivity);
-//        PendingIntent pendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
-//        mBuilder.setContentIntent(pendingIntent);
-//
-//        startForeground(41413, mBuilder.build());
-    }
-
-    public File getAlbumStorageDir(String albumName) {
-        // Path is Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),albumName);
-        if (!file.mkdirs()) {
-            // Shows this error also when directory already existed
-            Log.e("Error", "Directory not created");
-        }
-        return file;
     }
 
     public boolean isExternalStorageWritable() {
@@ -186,11 +153,7 @@ public class Camera2Service extends Service {
         */
         String op_mode = intent.getStringExtra("operation_mode");
         ImageProcessingMode image_processing_mode = op_mode.toLowerCase().contains("local")? ImageProcessingMode.LOCAL: ImageProcessingMode.WEBAPI;
-        onImageAvailableListener =  new ImageAvailableCallback(DetectorFactory.createFloorDetector(getAssets(),
-                getAlbumStorageDir("Exec times"),
-                isExternalStorageWritable()),
-                this,
-                image_processing_mode);
+        onImageAvailableListener =  new ImageAvailableCallback(image_processing_mode);
 
         if (!OpenCVLoader.initDebug()) {
             OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_2_0, this, opencv_callback);
@@ -348,105 +311,4 @@ public class Camera2Service extends Service {
         return this.cameraCaptureSessionCaptureCallback;
     }
 
-    /**
-     * Changes the capture request so that it uses a dummy surface instead of the camera and therefore the
-     * app does not receive any more captured images
-     */
-    private void assignDummySurface() {
-        CaptureRequest captureRequest = createCaptureRequest(mDummySurface);
-        try {
-            getCameraCaptureSession().setRepeatingRequest(captureRequest, null, null);
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Creates a base64 encoded image from the captured image
-     * @param im - The map object representing the captured image
-     * @return - The image encoded as base64 string
-     */
-    private String createEncodedImage(Mat im) {
-        MatOfByte matOfByte = new MatOfByte();
-        Imgcodecs.imencode(".jpg", im, matOfByte);
-        byte[] imageBytes = matOfByte.toArray();
-        String encodedImage = Base64.encodeToString(imageBytes, Base64.DEFAULT);
-        return encodedImage;
-    }
-
-    /**
-     * This method is called when we receive the response from the WebApi server. We update the log file, save the base64 image as a .jpg image in the phone and
-     * check if there are any more pending requests whose responses have not been received. If there is any pending request still, we will keep using the dummysurface
-     * instead of the real camera so that we do not capture any more images because if we do, we would be sending more requests to the WEbApi server than we can handle.
-     * If there are no pending requests, then we change the capture requests so that it uses the real camera and the app starts capturing images again.
-     * @param startEndtime - Time when the request was sent
-     * @param response - Base64 encoded image
-     */
-    private void onWebApiResponse(Long startEndtime, String response) {
-        Long endTime = System.currentTimeMillis();
-        fileUtils.mSaveData("Log.txt", "RAUL WEB API RESPONSE de " + startEndtime  + ". Lista de requests pendientes: " + Arrays.toString(requests.toArray()), getAlbumStorageDir("Logs"));
-        fileUtils.mSaveData("WebApiOP1.txt", (endTime - startEndtime) + "\n", getAlbumStorageDir("Exec times"));
-        imageTools.saveImage(response);
-        requests.remove(startEndtime);
-        if (requests.isEmpty() && getImageReader() != null) {
-            Surface surface = getImageReader().getSurface();
-            CaptureRequest captureRequest = createCaptureRequest(surface);
-            try {
-                getCameraCaptureSession().setRepeatingRequest(captureRequest, null, null);
-            } catch (CameraAccessException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    /**
-     * This method is called when there was an error with the WebApi HTTP request. We update the log file (Downloads/Logs/Log.txt)
-     * This file can be used for debugging purposes to see how the app is working with the WebApi requests and responses, and to check for errors.
-     * @param startEndtime - The time when we sent the request, which is also the request id
-     * @param error - The error returned
-     */
-    private void onWebApiError(Long startEndtime, VolleyError error) {
-        fileUtils.mSaveData("Log.txt", "RAUL WEB API ERROR de" + startEndtime, getAlbumStorageDir("Logs"));
-        if (error != null) {
-            fileUtils.mSaveData("Log.txt", error.getMessage(), getAlbumStorageDir("Logs"));
-        }
-    }
-
-    /**
-     * This method sends the image to the Python WebAPi and saves the output as a jpg file. It also updates the log file with
-     * information useful for debugging purposes (Downloads/Logs/Log.txt)
-     * @param im - The image captured
-     */
-    public void sendPic(Mat im) {
-        assignDummySurface();
-        final String encodedImage = createEncodedImage(im);
-        final Long startEndtime = System.currentTimeMillis();
-        requests.add(startEndtime);
-        fileUtils.mSaveData("Log.txt", "RAUL WEB API SEND PIC de " + startEndtime, getAlbumStorageDir("Logs"));
-        StringRequest stringRequest = new StringRequest(Request.Method.POST, URL, new Response.Listener<String>() {
-            @Override
-            public void onResponse(String response) {
-                onWebApiResponse(startEndtime, response);
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                onWebApiError(startEndtime, error);
-            }
-        }){
-            @Override
-            protected Map<String, String> getParams() throws AuthFailureError {
-                //Creating parameters
-                Map<String,String> params = new Hashtable<>();
-                //Adding parameters
-                params.put(KEY_IMAGE, encodedImage);
-                //returning parameters
-                return params;
-            }
-        };
-        //Creating a Request Queue
-        RequestQueue requestQueue = Volley.newRequestQueue(this);
-        //Adding request to the queue
-        requestQueue.add(stringRequest);
-    }
 }
