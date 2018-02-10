@@ -3,6 +3,7 @@ package usf.delahoz.fallprevention;
 import android.app.Service;
 import android.content.Intent;
 import android.graphics.ImageFormat;
+import android.graphics.PixelFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -168,7 +169,7 @@ public class ImageCollectorService extends Service {
         Toast.makeText(this, "Service starting", Toast.LENGTH_SHORT).show();
         CameraManager manager = (CameraManager) getSystemService(CAMERA_SERVICE);
         try {
-            imageReader = ImageReader.newInstance(240, 240, ImageFormat.JPEG, 2);
+            imageReader = ImageReader.newInstance(240, 240,  ImageFormat.JPEG, 2);
             imageReader.setOnImageAvailableListener(onImageAvailableListener,getmBackgroundHandler());
             Log.i(TAG, "onStartCommand");
             if (!mCameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {

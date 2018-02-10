@@ -38,10 +38,9 @@ public class ImageAvailableCallback implements ImageReader.OnImageAvailableListe
     public void onImageAvailable(ImageReader reader) {
         /* the following variables are used to convert the data we get to bytes,
         * and re-construct them to finally create and save an image file*/
-        Image img;
+        Image img = null;
         //pretty self explanatory. like, c'mon now. read the line. lazy...
         img = reader.acquireLatestImage();
-        Log.d(TAG, "" + img.getHeight() +"," + img.getWidth());
             /*the full code below would also have "if-else" or "else" statements
             * to check for other types of retrieved images/files */
         if (img == null) return;
@@ -51,10 +50,10 @@ public class ImageAvailableCallback implements ImageReader.OnImageAvailableListe
             {
                 try {
                     Mat im = Utils.createInputMat(img);
-//                    Mat result = detector.runInference(im);
-//                    if (result != null){
-//                        Utils.SaveImage(im,System.currentTimeMillis());
-//                    }
+                    Mat result = detector.runInference(im);
+                    if (result != null){
+                        Utils.SaveImage(im,System.currentTimeMillis());
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

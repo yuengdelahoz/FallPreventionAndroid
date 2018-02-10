@@ -1,6 +1,8 @@
 package usf.delahoz.fallprevention;
 
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.Image;
 import android.os.Environment;
 import android.util.Base64;
@@ -26,6 +28,7 @@ import static org.opencv.core.CvType.CV_8UC1;
 import static org.opencv.core.CvType.CV_8UC3;
 import static org.opencv.imgcodecs.Imgcodecs.IMREAD_COLOR;
 import static org.opencv.imgcodecs.Imgcodecs.imdecode;
+
 
 /**
  * Created by Yueng
@@ -192,16 +195,12 @@ public class Utils {
                     * here it is used with "Save(... , ...)" to assign these
                     * collected bytes from the image to the created file from "CreateJpeg()"*/
         ByteBuffer buffer = img.getPlanes()[0].getBuffer();
-        int rem = buffer.remaining();
         byte[] bytes = new byte[buffer.remaining()];
         buffer.get(bytes);
-        // Obtain a float array with the values of the image captured. The classifier
-        // uses this float array to perform the inference
-        Mat buf = new Mat(img.getHeight(),img.getWidth(), CvType.CV_8UC3);
         MatOfByte m = new MatOfByte(bytes);
-        Mat imgMat = imdecode(m, Imgcodecs.IMREAD_UNCHANGED);
+        Mat imgMat = imdecode(m, Imgcodecs.IMREAD_COLOR);
         Log.d(TAG,"Mat height, width: " + imgMat.rows() +", "+imgMat.cols() + " Image height, width: " + img.getHeight() + ", " + img.getWidth());
-        return imgMat;
+        return imgMat.submat(0,240,39,279);
 
 //        Mat cropped = imgMat.submat(0,239,39,279);
 //        return cropped;
