@@ -196,6 +196,7 @@ public class ImageCollectorService extends Service {
     @Override
     public void onDestroy() {
         closeCamera();
+        Log.d(TAG, "Service should be dead here");
     }
 
     //@Nullable
@@ -235,14 +236,12 @@ public class ImageCollectorService extends Service {
 
     /** Stops the background thread and its {@link Handler}.*/
     public void stopBackgroundThread() {
+        HandlerThread moribund = mBackgroundThread;
         mBackgroundThread.quitSafely();
-        try {
-            mBackgroundThread.join();
-            mBackgroundThread = null;
-            mBackgroundHandler = null;
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        moribund.interrupt();
+        mBackgroundThread = null;
+        mBackgroundHandler = null;
+
     }
 
     /**
@@ -256,20 +255,28 @@ public class ImageCollectorService extends Service {
         try {
             mCameraOpenCloseLock.acquire();
             if (null != session) {
+                session.stopRepeating();
                 session.close();
                 session = null;
             }
+            Log.i(TAG,"Closing session");
             if (null != cameraDevice) {
                 cameraDevice.close();
                 cameraDevice = null;
             }
+            Log.i(TAG,"Closing cameraDevice");
             if (null != imageReader) {
                 imageReader.close();
                 imageReader = null;
             }
+            Log.i(TAG,"Closing imageReader");
         } catch (InterruptedException e) {
+            e.printStackTrace();
             throw new RuntimeException("Interrupted while trying to lock camera closing.", e);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
         } finally {
+            Log.i(TAG,"releasing lock");
             stopBackgroundThread();
             mCameraOpenCloseLock.release();
             Log.i(TAG,"Closed Camera");

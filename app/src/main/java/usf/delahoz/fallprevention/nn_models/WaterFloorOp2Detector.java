@@ -48,6 +48,11 @@ class WaterFloorOp2Detector implements Detector {
         return waterSuperpixels;
     }
 
+    @Override
+    public long getInferenceRuntime() {
+        return 0;
+    }
+
     /**
      * Merges the laplacian image and the RGB floor detection output to create the input of the water detection model
      * @param floorSuperpixels - Raw output of the floor model

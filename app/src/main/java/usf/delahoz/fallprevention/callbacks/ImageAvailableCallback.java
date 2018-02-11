@@ -49,12 +49,9 @@ public class ImageAvailableCallback implements ImageReader.OnImageAvailableListe
             if (Utils.isExternalStorageWritable())
             {
                 try {
-                    long start_time = System.currentTimeMillis();
                     Mat im = Utils.createInputMat(img);
-                    Mat result = detector.runInference(im);
-                    if (result != null){
-                        Utils.SaveImage(im,System.currentTimeMillis());
-                    }
+                    float[] result = detector.runInference(im);
+                    Log.i(TAG,"Inference time " + detector.getInferenceRuntime());
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

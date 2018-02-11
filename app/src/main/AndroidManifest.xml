@@ -27,7 +27,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name="usf.delahoz.fallprevention.MainActivity">
+        <activity  android:screenOrientation="landscape" android:name="usf.delahoz.fallprevention.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -39,7 +39,7 @@
             android:name="usf.delahoz.fallprevention.ImageCollectorService"
             android:enabled="true"
             android:exported="false"
-            android:process=":fallpreventionnn"></service>
+            android:process=":imagecollector"></service>
     </application>
 
 </manifest>

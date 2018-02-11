@@ -29,4 +29,9 @@ class FloorDetector implements Detector {
         }
         return superpixels;
     }
+
+    @Override
+    public long getInferenceRuntime() {
+        return 0;
+    }
 }

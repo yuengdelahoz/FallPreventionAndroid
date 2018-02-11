@@ -14,6 +14,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.opencv.core.Mat;
 
+import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 
 import usf.delahoz.fallprevention.Utils;
@@ -23,15 +24,20 @@ import usf.delahoz.fallprevention.Utils;
  */
 
 public class RemoteDetector implements Detector{
-    private String URL ="http://research.jadorno.com:8100/waterdetection";
+    private String URL ="http://research.jadorno.com:8100/fallprevention";
     private String KEY_IMAGE = "image";
     private Context context;
     private long startTime;
     private final String TAG = getClass().getName();
+    private long start_time,end_time;
+    private String[] models = {"floor_detection","object_detectio"};
+    private JSONArray nn_models;
+
 
 
     public RemoteDetector(Context context) {
         this.context = context;
+        nn_models = new JSONArray(Arrays.asList(models));
     }
 
     @Override
@@ -41,12 +47,13 @@ public class RemoteDetector implements Detector{
          * information useful for debugging purposes (Downloads/Logs/Log.txt)
          * @param im - The image captured
          */
-        Log.d(TAG,"Running remote Inference. " + Thread.currentThread().getId());
+        start_time = System.currentTimeMillis();
         final String encodedImage = Utils.createEncodedImage(image);
         startTime = System.currentTimeMillis();
         JSONObject params = new JSONObject();
         try {
             params.put(KEY_IMAGE,encodedImage);
+            params.put("models",nn_models);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -60,21 +67,40 @@ public class RemoteDetector implements Detector{
         try {
             JSONObject response = future.get(); // this will block
             JSONArray result = response.getJSONArray("result");
-            Log.d(TAG,result.toString());
+            float [] superpixels = fillData(result.getJSONArray(0));
+            Log.d(TAG, "superpixels " + Arrays.toString(superpixels));
 
         } catch (InterruptedException e) {
             // exception handling
         } catch (ExecutionException e) {
-            // exception handling
+            // exception handline
         } catch (JSONException e) {
             e.printStackTrace();
         }
+        end_time = System.currentTimeMillis();
         return null;
     }
 
     @Override
     public long getInferenceRuntime() {
-        return 0;
+        long inference_time = end_time - start_time;
+        Utils.mSaveData(nn_models.toString()+"_inference_times.csv",inference_time+"",Utils.getAlbumStorageDir("exec_times"));
+        return inference_time;
+    }
+
+    private float[] fillData(JSONArray jsonArray){
+
+        float[] fData = new float[jsonArray.length()];
+
+        for (int i = 0; i < jsonArray.length(); i++) {
+            try {
+                fData[i] = Float.parseFloat(jsonArray.getString(i));
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return fData;
     }
 
 }
