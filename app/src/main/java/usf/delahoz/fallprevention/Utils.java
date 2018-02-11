@@ -94,6 +94,24 @@ public class Utils {
         return or;
     }
 
+    public static Mat paintFloorImage(float[] superpixels, Mat originalImage) {
+        int height = originalImage.height();
+        int width = originalImage.width();
+        Mat or = new Mat(240, 240, CV_8UC3);
+        originalImage.convertTo(or, CV_8UC3);
+        int superpixel = 0;
+        for (int sv = 0; sv < height; sv += 8) { // 30 superpixels in the height direction
+            for (int sh = 0; sh < width; sh += 8) { // 30 superpixels in the width direction
+                Rect roi = new Rect(sh, sv, 8, 8);
+                if (superpixels[superpixel] < 0.5) {
+                    or.submat(roi).setTo(new Scalar(255, 255, 255));
+                }
+                superpixel++;
+            }
+        }
+        return or;
+    }
+
     public static Mat paintBlackWhiteResults(float[] superpixels, Mat originalImage) {
         int height = originalImage.height();
         int width = originalImage.width();

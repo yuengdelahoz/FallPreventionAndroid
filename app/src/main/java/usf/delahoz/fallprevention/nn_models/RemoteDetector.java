@@ -26,8 +26,9 @@ public class RemoteDetector implements Detector{
     private String URL ="http://research.jadorno.com:8100/waterdetection";
     private String KEY_IMAGE = "image";
     private Context context;
-    private long startTime;
+    private long inferenceTime = -1l;
     private final String TAG = getClass().getName();
+    private static final String INFERENCE_RUNTIME_FILENAME = "Inference_Time_Web_API.csv";
 
 
     public RemoteDetector(Context context) {
@@ -35,7 +36,7 @@ public class RemoteDetector implements Detector{
     }
 
     @Override
-    public float[] runInference(Mat image) {
+    public float[] runInference(Mat image, long startTime) {
         /**
          * This method sends the image to the Python WebAPi and saves the output as a jpg file. It also updates the log file with
          * information useful for debugging purposes (Downloads/Logs/Log.txt)
@@ -60,7 +61,7 @@ public class RemoteDetector implements Detector{
         try {
             JSONObject response = future.get(); // this will block
             JSONArray result = response.getJSONArray("result");
-            Log.d(TAG,result.toString());
+            this.inferenceTime = (System.currentTimeMillis() - startTime);
 
         } catch (InterruptedException e) {
             // exception handling
@@ -74,7 +75,12 @@ public class RemoteDetector implements Detector{
 
     @Override
     public long getInferenceRuntime() {
-        return 0;
+        return this.inferenceTime;
+    }
+
+    @Override
+    public String getInferenceRuntimeFilename() {
+        return INFERENCE_RUNTIME_FILENAME;
     }
 
 }

@@ -21,12 +21,14 @@ public class ImageAvailableCallback implements ImageReader.OnImageAvailableListe
     private Detector detector;
     private String TAG = getClass().getName();
     private Object lock = new Object();
+    private static final String INFERENCE_RUNTIME_FOLDER = "InferenceTimes";
 
     public ImageAvailableCallback(ImageProcessingMode mode , Context context) {
         Log.d(TAG,"Constructor: Processing Image using mode " + mode);
         switch (mode){
             case LOCAL:
-                this.detector = DetectorFactory.createFloorDetector(context.getAssets());
+                //this.detector = DetectorFactory.createFloorDetector(context.getAssets());
+                this.detector = DetectorFactory.createObjectDetectorSixFloor(context.getAssets());
                 break;
             case WEBAPI:
                 this.detector = DetectorFactory.createRemoteDetector(context);
@@ -51,9 +53,12 @@ public class ImageAvailableCallback implements ImageReader.OnImageAvailableListe
                 try {
                     long start_time = System.currentTimeMillis();
                     Mat im = Utils.createInputMat(img);
-                    Mat result = detector.runInference(im);
-                    if (result != null){
-                        Utils.SaveImage(im,System.currentTimeMillis());
+                    Utils.SaveImage(im, start_time);
+                    float[] inferenceResult = detector.runInference(im, start_time);
+                    if (Utils.isExternalStorageWritable()) { // Write the execution times in a file in Downloads/Exec Times folder in the phone
+                        Utils.mSaveData(detector.getInferenceRuntimeFilename(),
+                                "" + detector.getInferenceRuntime(),
+                                Utils.getAlbumStorageDir(INFERENCE_RUNTIME_FOLDER));
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
