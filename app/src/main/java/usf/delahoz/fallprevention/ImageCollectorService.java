@@ -1,9 +1,15 @@
 package usf.delahoz.fallprevention;
 
+import android.annotation.SuppressLint;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
-import android.graphics.PixelFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -12,35 +18,21 @@ import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
 import android.media.ImageReader;
+import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
-import android.util.Base64;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 import android.view.Surface;
 import android.widget.Toast;
 
-import com.android.volley.AuthFailureError;
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.StringRequest;
-import com.android.volley.toolbox.Volley;
-
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
-import org.opencv.core.Mat;
-import org.opencv.core.MatOfByte;
-import org.opencv.imgcodecs.Imgcodecs;
 
-import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
@@ -48,9 +40,7 @@ import usf.delahoz.fallprevention.callbacks.CameraCaptureSessionCaptureCallback;
 import usf.delahoz.fallprevention.callbacks.CameraCaptureSessionStateCallback;
 import usf.delahoz.fallprevention.callbacks.CameraStateCallback;
 import usf.delahoz.fallprevention.callbacks.ImageAvailableCallback;
-import usf.delahoz.fallprevention.callbacks.ImageAvailableCallback.ImageProcessingMode;
 import usf.delahoz.fallprevention.callbacks.OpenCvCallback;
-import usf.delahoz.fallprevention.nn_models.DetectorFactory;
 
 /**
  * Created by Panos on 11/11/2016.
@@ -89,6 +79,7 @@ public class ImageCollectorService extends Service {
     private CameraCaptureSessionStateCallback cameraCaptureSessionStateCallback = new CameraCaptureSessionStateCallback(this);
     private CameraCaptureSessionCaptureCallback cameraCaptureSessionCaptureCallback = new CameraCaptureSessionCaptureCallback(this);
     private ImageAvailableCallback onImageAvailableListener;
+    private Notification foreground_notification = null;
     /**
      * A {@link Semaphore} to prevent the app from exiting before closing the camera.
      */
@@ -105,20 +96,47 @@ public class ImageCollectorService extends Service {
     private String URL ="http://enb302.online:8001/delahoz/";
     private String KEY_IMAGE = "image";
     private List<Long> requests = new ArrayList<>();
+    private String CHANNEL_ID = "Fall prevention channel";
+    private NotificationManager mNotificationManager;
+
 
     //state of the app once tapped on
     @Override
     public void onCreate() {
         Log.i(TAG, "onCreate from camera service");
-        super.onCreate();
-    }
 
-    public boolean isExternalStorageWritable() {
-        String state = Environment.getExternalStorageState();
-        if (Environment.MEDIA_MOUNTED.equals(state)) {
-            return true;
+        mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = getString(R.string.app_name);
+            // Create the channel for the notification
+            @SuppressLint("WrongConstant") NotificationChannel mChannel =
+                    new NotificationChannel(CHANNEL_ID, name, NotificationManager.IMPORTANCE_HIGH);
+
+            // Set the Notification Channel for the Notification Manager.
+            mNotificationManager.createNotificationChannel(mChannel);
         }
-        return false;
+
+        final Intent notificationIntent = new Intent(this, MainActivity.class);
+        notificationIntent.putExtra("RUNNING_IN_BACKGROUND",true);
+        PendingIntent pendingIntent =PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        Bitmap icon = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher_round);
+        Notification.Builder builder =
+                new Notification.Builder(this)
+                        .setContentTitle("Fall Prevention System")
+                        .setContentText("Executing")
+                        .setContentIntent(pendingIntent)
+                        .setTicker(getText(R.string.app_name))
+                        .setSmallIcon(R.mipmap.ic_launcher)
+                        .setLargeIcon(Bitmap.createScaledBitmap(icon, 128, 128, false))
+                        .setOngoing(true);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            builder.setChannelId(CHANNEL_ID);
+        }
+        foreground_notification = builder.build();
+
+        super.onCreate();
     }
 
     /**
@@ -187,6 +205,7 @@ public class ImageCollectorService extends Service {
         } catch (SecurityException e) {
             e.printStackTrace();
         }
+        startForeground(100, foreground_notification);
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -194,7 +213,7 @@ public class ImageCollectorService extends Service {
     @Override
     public void onDestroy() {
         closeCamera();
-        Log.d(TAG, "Service should be dead here");
+        stopForeground(true);
     }
 
     //@Nullable

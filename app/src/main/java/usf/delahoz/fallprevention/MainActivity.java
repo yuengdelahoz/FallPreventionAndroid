@@ -3,10 +3,15 @@ package usf.delahoz.fallprevention;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Notification;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
@@ -108,6 +113,15 @@ public class MainActivity extends Activity {
         final Intent processImage = new Intent(this,ImageCollectorService.class);
         final Bundle options = new Bundle();
         btn = (Button) findViewById(R.id.startBtn);
+
+        if (getIntent().getBooleanExtra("RUNNING_IN_BACKGROUND",false)){
+            operation_mode.setEnabled(false);
+            isFloor.setEnabled(false);
+            isObject.setEnabled(false);
+            isDistance.setEnabled(false);
+            btn.setText("Stop");
+        }
+
         btn.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
