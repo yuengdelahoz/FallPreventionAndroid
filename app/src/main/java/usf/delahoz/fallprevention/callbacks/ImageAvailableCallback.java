@@ -27,8 +27,8 @@ public class ImageAvailableCallback implements ImageReader.OnImageAvailableListe
         Log.d(TAG,"Constructor: Processing Image using mode " + mode);
         switch (mode){
             case LOCAL:
-                //this.detector = DetectorFactory.createFloorDetector(context.getAssets());
-                this.detector = DetectorFactory.createObjectDetectorSixFloor(context.getAssets());
+                this.detector = DetectorFactory.createFloorDetector(context.getAssets());
+                //this.detector = DetectorFactory.createObjectDetectorSixFloor(context.getAssets());
                 break;
             case WEBAPI:
                 this.detector = DetectorFactory.createRemoteDetector(context);
@@ -53,7 +53,6 @@ public class ImageAvailableCallback implements ImageReader.OnImageAvailableListe
                 try {
                     long start_time = System.currentTimeMillis();
                     Mat im = Utils.createInputMat(img);
-                    Utils.SaveImage(im, start_time);
                     float[] inferenceResult = detector.runInference(im, start_time);
                     if (Utils.isExternalStorageWritable()) { // Write the execution times in a file in Downloads/Exec Times folder in the phone
                         Utils.mSaveData(detector.getInferenceRuntimeFilename(),
