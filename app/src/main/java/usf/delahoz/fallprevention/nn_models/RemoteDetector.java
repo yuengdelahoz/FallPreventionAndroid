@@ -31,7 +31,6 @@ public class RemoteDetector implements Detector{
     private Context context;
     private long inferenceTime = -1l;
     private final String TAG = getClass().getName();
-    private long start_time,end_time;
     private JSONArray nn_models;
     private String filename = null;
 
@@ -44,7 +43,7 @@ public class RemoteDetector implements Detector{
     }
 
     @Override
-    public float[] runInference(Mat image, long startTime) {
+    public float[] runInference(Mat image, long start_time) {
         /**
          * This method sends the image to the Python WebAPi and saves the output as a jpg file. It also updates the log file with
          * information useful for debugging purposes (Downloads/Logs/Log.txt)
@@ -71,7 +70,7 @@ public class RemoteDetector implements Detector{
         try {
             JSONObject response = future.get(); // this will block
             JSONArray result = response.getJSONArray("result");
-             = fillData(result.getJSONArray(0));
+             superpixels = fillData(result.getJSONArray(0));
             Log.d(TAG, "superpixels " + Arrays.toString(superpixels));
 
         } catch (InterruptedException e) {
@@ -82,7 +81,7 @@ public class RemoteDetector implements Detector{
             e.printStackTrace();
         }
 
-        this.inferenceTime = (System.currentTimeMillis() - startTime);
+        this.inferenceTime = (System.currentTimeMillis() - start_time);
         return null;
     }
 
