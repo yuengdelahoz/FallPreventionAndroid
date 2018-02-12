@@ -51,7 +51,8 @@ public class CameraCaptureSessionCaptureCallback extends CameraCaptureSession.Ca
                 Surface surface = cameraService.getImageReader().getSurface();
                 CaptureRequest captureRequest = cameraService.createCaptureRequest(surface);
                 session.setRepeatingRequest(captureRequest, null, cameraService.getmBackgroundHandler());
-            } catch (CameraAccessException e) {
+                m++;
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }

@@ -5,17 +5,49 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingBottom="140dp"
+    android:paddingHorizontal="10dp"
     android:orientation="vertical"
     android:gravity="center"
     >
 
 
+    <Switch
+        android:id="@+id/floor_detection"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:checked="true"
+        android:gravity="left|center"
+        android:paddingHorizontal="200dp"
+        android:text="Floor Detection  " />
+
+    <Switch
+        android:id="@+id/object_detection"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:checked="true"
+        android:gravity="left|center"
+        android:paddingHorizontal="200dp"
+        android:text="Object Detection  " />
+
+    <Switch
+        android:id="@+id/distance_estimation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:checked="true"
+        android:gravity="left|center"
+        android:paddingHorizontal="200dp"
+        android:text="Distance Estimation" />
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="40dp" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:weightSum="2"
-        android:paddingRight="10dp"
+        android:paddingLeft="40dp"
+        android:paddingRight="60dp"
         >
 
         <TextView
@@ -41,11 +73,17 @@
 
     </LinearLayout>
 
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="20dp" />
+
     <Button
         android:id="@+id/startBtn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="200dp"
+        android:layout_height="100dp"
         android:layout_gravity="center"
-        android:text="@string/launch" />
+        android:selectAllOnFocus="false"
+        android:text="@string/launch"
+        android:textSize="18sp" />
 
 </LinearLayout>

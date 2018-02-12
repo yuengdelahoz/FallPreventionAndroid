@@ -152,9 +152,7 @@ public class ImageCollectorService extends Service {
         /*
         Instantiating callback that handles how images are processed once they are available.
         */
-        String op_mode = intent.getStringExtra("operation_mode");
-        ImageProcessingMode image_processing_mode = op_mode.toLowerCase().contains("local")? ImageProcessingMode.LOCAL: ImageProcessingMode.WEBAPI;
-        onImageAvailableListener =  new ImageAvailableCallback(image_processing_mode,this);
+        onImageAvailableListener =  new ImageAvailableCallback(intent.getExtras(),this);
 
         if (!OpenCVLoader.initDebug()) {
             OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_2_0, this, opencv_callback);
@@ -237,11 +235,9 @@ public class ImageCollectorService extends Service {
     /** Stops the background thread and its {@link Handler}.*/
     public void stopBackgroundThread() {
         HandlerThread moribund = mBackgroundThread;
-        mBackgroundThread.quitSafely();
-        moribund.interrupt();
         mBackgroundThread = null;
+        moribund.quitSafely();
         mBackgroundHandler = null;
-
     }
 
     /**
@@ -270,10 +266,7 @@ public class ImageCollectorService extends Service {
                 imageReader = null;
             }
             Log.i(TAG,"Closing imageReader");
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Interrupted while trying to lock camera closing.", e);
-        } catch (CameraAccessException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         } finally {
             Log.i(TAG,"releasing lock");

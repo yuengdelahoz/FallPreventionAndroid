@@ -4,11 +4,13 @@ import android.content.Context;
 import android.graphics.ImageFormat;
 import android.media.Image;
 import android.media.ImageReader;
+import android.os.Bundle;
 import android.util.Log;
 
 import org.opencv.core.Mat;
 
-import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import usf.delahoz.fallprevention.Utils;
 import usf.delahoz.fallprevention.nn_models.Detector;
@@ -20,16 +22,24 @@ public class ImageAvailableCallback implements ImageReader.OnImageAvailableListe
     private Utils mat = new Utils();
     private Detector detector;
     private String TAG = getClass().getName();
-    private Object lock = new Object();
+    private String[] nn_models;
 
-    public ImageAvailableCallback(ImageProcessingMode mode , Context context) {
-        Log.d(TAG,"Constructor: Processing Image using mode " + mode);
+    public ImageAvailableCallback(Bundle options, Context context) {
+        ImageProcessingMode mode = options.getString("operation_mode").toLowerCase().contains("local")? ImageProcessingMode.LOCAL: ImageProcessingMode.WEBAPI;
+
+        ArrayList<String> models = options.getStringArrayList("models");
+        nn_models = new String[models.size()];
+        for (int i=0;i<models.size();i++){
+            nn_models[i] = models.get(i);
+        }
+
+        Log.d(TAG,"Constructor: Processing Image using models" + Arrays.toString(nn_models));
         switch (mode){
             case LOCAL:
                 this.detector = DetectorFactory.createFloorDetector(context.getAssets());
                 break;
             case WEBAPI:
-                this.detector = DetectorFactory.createRemoteDetector(context);
+                this.detector = DetectorFactory.createRemoteDetector(context,nn_models);
                 break;
         }
     }

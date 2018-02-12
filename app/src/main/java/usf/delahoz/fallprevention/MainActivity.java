@@ -2,6 +2,8 @@ package usf.delahoz.fallprevention;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -11,7 +13,10 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
+import android.widget.Switch;
 import android.widget.Toast;
+
+import java.util.ArrayList;
 
 public class MainActivity extends Activity {
 
@@ -77,6 +82,20 @@ public class MainActivity extends Activity {
             requestPermissions(new String[]{Manifest.permission.CAMERA}, REQUEST_CAMERA);
         }
 
+        final AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
+        alertDialog.setTitle("Alert");
+        alertDialog.setMessage("At least one model must be selected");
+        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+
+
+
+        final Switch isFloor = (Switch) findViewById(R.id.floor_detection);
+        final Switch isObject = (Switch) findViewById(R.id.object_detection);
+        final Switch isDistance = (Switch) findViewById(R.id.distance_estimation);
 
 //        Choose to run models locally or through the webapi
         operation_mode = (Spinner) findViewById(R.id.operation_mode);
@@ -86,19 +105,41 @@ public class MainActivity extends Activity {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         operation_mode.setAdapter(adapter);
 
-
         final Intent processImage = new Intent(this,ImageCollectorService.class);
+        final Bundle options = new Bundle();
         btn = (Button) findViewById(R.id.startBtn);
         btn.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                processImage.putExtra("operation_mode",operation_mode.getSelectedItem().toString());
-                if (btn.getText().toString().equals("Launch")) {  //Start
-                    startService(processImage);
+                options.putString("operation_mode",operation_mode.getSelectedItem().toString());
+
+                ArrayList<String> models = new ArrayList<String>();
+                if (isFloor.isChecked()) models.add("floor_detection");
+                if (isObject.isChecked()) models.add("object_detection");
+                if (isDistance.isChecked()) models.add("distance_detection");
+
+
+                options.putStringArrayList("models",models);
+                processImage.putExtras(options);
+
+                if (btn.getText().toString().equals("Launch") && models.size() >0) {  //Start
                     btn.setText("Stop");
+                    operation_mode.setEnabled(false);
+                    isFloor.setEnabled(false);
+                    isObject.setEnabled(false);
+                    isDistance.setEnabled(false);
+                    startService(processImage);
+
                 } else if (btn.getText().toString().equals("Stop")) { //Stop
-                    stopService(processImage);
                     btn.setText("Launch");
+                    operation_mode.setEnabled(true);
+                    isFloor.setEnabled(true);
+                    isObject.setEnabled(true);
+                    isDistance.setEnabled(true);
+                    stopService(processImage);
+                }
+                else if (models.size() <1){
+                    alertDialog.show();
                 }
             }
         });

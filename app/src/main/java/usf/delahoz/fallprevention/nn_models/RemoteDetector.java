@@ -1,6 +1,8 @@
 package usf.delahoz.fallprevention.nn_models;
 
 import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.util.Log;
 
 import com.android.volley.Request;
@@ -30,14 +32,15 @@ public class RemoteDetector implements Detector{
     private long startTime;
     private final String TAG = getClass().getName();
     private long start_time,end_time;
-    private String[] models = {"floor_detection","object_detectio"};
     private JSONArray nn_models;
+    private String filename = null;
 
-
-
-    public RemoteDetector(Context context) {
+    public RemoteDetector(Context context, String[] models) {
         this.context = context;
         nn_models = new JSONArray(Arrays.asList(models));
+        ConnectivityManager cm = (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        filename = activeNetwork.getTypeName()+'_'+Arrays.toString(models)+"_inference_times.csv";
     }
 
     @Override
@@ -54,6 +57,8 @@ public class RemoteDetector implements Detector{
         try {
             params.put(KEY_IMAGE,encodedImage);
             params.put("models",nn_models);
+            params.put("start_time",start_time);
+            params.put("filename",filename);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -84,7 +89,8 @@ public class RemoteDetector implements Detector{
     @Override
     public long getInferenceRuntime() {
         long inference_time = end_time - start_time;
-        Utils.mSaveData(nn_models.toString()+"_inference_times.csv",inference_time+"",Utils.getAlbumStorageDir("exec_times"));
+        String line = start_time + "," + inference_time;
+        Utils.mSaveData(filename,line,Utils.getAlbumStorageDir("exec_times"));
         return inference_time;
     }
 
