@@ -22,6 +22,7 @@ public class ImageAvailableCallback implements ImageReader.OnImageAvailableListe
     private Utils mat = new Utils();
     private Detector detector;
     private String TAG = getClass().getName();
+    private static final String INFERENCE_RUNTIME_FOLDER = "InferenceTimes";
     private String[] nn_models;
 
     public ImageAvailableCallback(Bundle options, Context context) {
@@ -59,9 +60,14 @@ public class ImageAvailableCallback implements ImageReader.OnImageAvailableListe
             if (Utils.isExternalStorageWritable())
             {
                 try {
+                    long start_time = System.currentTimeMillis();
                     Mat im = Utils.createInputMat(img);
-                    float[] result = detector.runInference(im);
-                    Log.i(TAG,"Inference time " + detector.getInferenceRuntime());
+                    float[] inferenceResult = detector.runInference(im, start_time);
+                    if (Utils.isExternalStorageWritable()) { // Write the execution times in a file in Downloads/Exec Times folder in the phone
+                        Utils.mSaveData(detector.getInferenceRuntimeFilename(),
+                                start_time + "," + detector.getInferenceRuntime(),
+                                Utils.getAlbumStorageDir(INFERENCE_RUNTIME_FOLDER));
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

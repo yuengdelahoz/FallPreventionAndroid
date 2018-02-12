@@ -15,18 +15,15 @@ import usf.delahoz.fallprevention.tfclassification.ClassifierFactory;
 
 class WaterDetector implements Detector {
     private Classifier classifier;
-    private boolean isExternalStorageWritable;
-    private File albumStorageDir;
+    private long inferenceTime = -1l;
+    private static final String INFERENCE_RUNTIME_FILENAME = "Inference_Time_Water_Detection.csv";
 
-    WaterDetector(AssetManager assetManager, File albubStorageDir, boolean isExternalStorageWritable) {
+    WaterDetector(AssetManager assetManager) {
         this.classifier = ClassifierFactory.createWaterDetectionClassifier(assetManager);
-        this.albumStorageDir = albubStorageDir;
-        this.isExternalStorageWritable = isExternalStorageWritable;
     }
 
     @Override
-    public float[] runInference(Mat originalImage) {
-        Long startTime = System.currentTimeMillis();
+    public float[] runInference(Mat originalImage, long startTime) {
         Mat edgeImage = Utils.createLaplacianImage(originalImage); //Compute the Laplacian edge detection image and add it as the fourth dimension of the input of the water detection model
         List<Mat> mats = new ArrayList<>();
         mats.add(originalImage);
@@ -35,19 +32,18 @@ class WaterDetector implements Detector {
         Core.merge(mats, input);
 
         float[] inputValues = Utils.convertMatToFloatArr(input);
-        Long startWater = System.currentTimeMillis();
         float[] superpixels = classifier.classifyImage(inputValues); //Perform the inference on the input image
-        Long endWater = System.currentTimeMillis();
-        Mat finalImage = Utils.paintOriginalImage(superpixels, originalImage, false); // Paint a red filter on those areas classified as 'water' by the model in the RGB input image
-        Long endTime = System.currentTimeMillis();
-        if (isExternalStorageWritable) { // Write the execution times in a file in Downloads/Exec Times/TimesWaterOriginal.txt file in the phone
-            Utils.mSaveData("TimesWaterOriginal.txt", 0 + ";" + (endWater-startWater) + ";" + (endTime-startTime), albumStorageDir);
-        }
+        this.inferenceTime = (System.currentTimeMillis() - startTime);
         return superpixels;
     }
 
     @Override
     public long getInferenceRuntime() {
-        return 0;
+        return this.inferenceTime;
+    }
+
+    @Override
+    public String getInferenceRuntimeFilename() {
+        return INFERENCE_RUNTIME_FILENAME;
     }
 }

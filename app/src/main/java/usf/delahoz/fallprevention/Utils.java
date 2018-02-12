@@ -8,6 +8,7 @@ import android.os.Environment;
 import android.util.Base64;
 import android.util.Log;
 
+import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
@@ -21,7 +22,11 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
+import static org.opencv.core.CvType.CV_32FC1;
 import static org.opencv.core.CvType.CV_32FC3;
 import static org.opencv.core.CvType.CV_8U;
 import static org.opencv.core.CvType.CV_8UC1;
@@ -87,6 +92,24 @@ public class Utils {
                     subOrig.copyTo(or.submat(roi));
                 } else if (superpixels[superpixel] <= 0.5 && obscure) {
                     or.submat(roi).setTo(new Scalar(0, 0, 0));
+                }
+                superpixel++;
+            }
+        }
+        return or;
+    }
+
+    public static Mat paintFloorImage(float[] superpixels, Mat originalImage) {
+        int height = originalImage.height();
+        int width = originalImage.width();
+        Mat or = new Mat(240, 240, CV_8UC3);
+        originalImage.convertTo(or, CV_8UC3);
+        int superpixel = 0;
+        for (int sv = 0; sv < height; sv += 8) { // 30 superpixels in the height direction
+            for (int sh = 0; sh < width; sh += 8) { // 30 superpixels in the width direction
+                Rect roi = new Rect(sh, sv, 8, 8);
+                if (superpixels[superpixel] <= 0.5) {
+                    or.submat(roi).setTo(new Scalar(255, 255, 255));
                 }
                 superpixel++;
             }

@@ -20,6 +20,9 @@ android {
                 jniLibs.srcDirs = ['libs']
             }
         }
+        jackOptions {
+            enabled true
+        }
     }
     buildTypes {
         release {
@@ -32,7 +35,20 @@ android {
             path "CMakeLists.txt"
         }
     }
-    sourceSets { main { jni.srcDirs = ['src/main/jni', 'src/main/jniLibs/'] } }
+    sourceSets {
+        main {
+            jni.srcDirs = ['src/main/jni', 'src/main/jniLibs/']
+            assets.srcDirs = ['src/main/assets', 'src/main/assets/']
+        }
+    }
+    dexOptions {
+        incremental true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 }
 
 dependencies {

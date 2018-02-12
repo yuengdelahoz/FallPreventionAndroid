@@ -29,7 +29,7 @@ public class RemoteDetector implements Detector{
     private String URL ="http://research.jadorno.com:8100/fallprevention";
     private String KEY_IMAGE = "image";
     private Context context;
-    private long startTime;
+    private long inferenceTime = -1l;
     private final String TAG = getClass().getName();
     private long start_time,end_time;
     private JSONArray nn_models;
@@ -44,15 +44,13 @@ public class RemoteDetector implements Detector{
     }
 
     @Override
-    public float[] runInference(Mat image) {
+    public float[] runInference(Mat image, long startTime) {
         /**
          * This method sends the image to the Python WebAPi and saves the output as a jpg file. It also updates the log file with
          * information useful for debugging purposes (Downloads/Logs/Log.txt)
          * @param im - The image captured
          */
-        start_time = System.currentTimeMillis();
         final String encodedImage = Utils.createEncodedImage(image);
-        startTime = System.currentTimeMillis();
         JSONObject params = new JSONObject();
         try {
             params.put(KEY_IMAGE,encodedImage);
@@ -69,10 +67,11 @@ public class RemoteDetector implements Detector{
         RequestQueue requestQueue = Volley.newRequestQueue(this.context);
         //Adding request to the queue
         requestQueue.add(jsonRequest);
+        float [] superpixels = null;
         try {
             JSONObject response = future.get(); // this will block
             JSONArray result = response.getJSONArray("result");
-            float [] superpixels = fillData(result.getJSONArray(0));
+             = fillData(result.getJSONArray(0));
             Log.d(TAG, "superpixels " + Arrays.toString(superpixels));
 
         } catch (InterruptedException e) {
@@ -82,16 +81,14 @@ public class RemoteDetector implements Detector{
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        end_time = System.currentTimeMillis();
+
+        this.inferenceTime = (System.currentTimeMillis() - startTime);
         return null;
     }
 
     @Override
     public long getInferenceRuntime() {
-        long inference_time = end_time - start_time;
-        String line = start_time + "," + inference_time;
-        Utils.mSaveData(filename,line,Utils.getAlbumStorageDir("exec_times"));
-        return inference_time;
+        return inferenceTime;
     }
 
     private float[] fillData(JSONArray jsonArray){
@@ -107,6 +104,11 @@ public class RemoteDetector implements Detector{
         }
 
         return fData;
+    }
+
+    @Override
+    public String getInferenceRuntimeFilename() {
+        return filename;
     }
 
 }

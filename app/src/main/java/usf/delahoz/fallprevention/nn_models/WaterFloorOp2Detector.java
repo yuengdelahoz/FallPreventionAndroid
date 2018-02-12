@@ -16,41 +16,35 @@ import usf.delahoz.fallprevention.tfclassification.ClassifierFactory;
 class WaterFloorOp2Detector implements Detector {
     private Classifier waterClassifier;
     private Classifier floorClassifier;
-    private File albumStorageDir;
-    private boolean isExternalStorageWritable;
+    private long inferenceTime = -1l;
+    private static final String INFERENCE_RUNTIME_FILENAME = "Inference_Time_Water_Floor_OP2_Detection.csv";
 
-    WaterFloorOp2Detector(AssetManager assetManager, File albubStorageDir, boolean isExternalStorageWritable) {
+    WaterFloorOp2Detector(AssetManager assetManager) {
         this.floorClassifier = ClassifierFactory.createFloorDetectionClassifier(assetManager);
         this.waterClassifier = ClassifierFactory.createWaterFloorOp2DetectionClassifier(assetManager);
-        this.albumStorageDir = albubStorageDir;
-        this.isExternalStorageWritable = isExternalStorageWritable;
     }
 
     @Override
-    public float[] runInference(Mat originalImage) {
+    public float[] runInference(Mat originalImage, long startTime) {
         // Perform the floor detection and create the color image from its output
-        Long startTime = System.currentTimeMillis();
         float[] floorInputValues = Utils.convertMatToFloatArr(originalImage);
-        Long startFloor = System.currentTimeMillis();
         float[] floorSuperpixels = floorClassifier.classifyImage(floorInputValues); //Perform the inference on the input image
-        Long endFloor = System.currentTimeMillis();
         // Perform the water detection passing the 4 dimension input (color image from the floor detection model + edge detection)
         Mat inputImage = mergeLayersToCreateInput(floorSuperpixels, originalImage);
         float[] waterInputValues = Utils.convertMatToFloatArr(inputImage);
-        Long startWater = System.currentTimeMillis();
         float[] waterSuperpixels = waterClassifier.classifyImage(waterInputValues);
-        Long endWater = System.currentTimeMillis();
-        Mat waterImage = Utils.paintOriginalImage(waterSuperpixels, originalImage, false); //Paint a red filter on those areas classified as 'water' by the model in the RGB input image
-        Long endTime = System.currentTimeMillis();
-        if (isExternalStorageWritable) { // Write the execution times in a file in Downloads/Exec Times/TimesWaterOp1.txt file in the phone
-            Utils.mSaveData("TimesWaterOp2.txt", (endFloor-startFloor) + ";" + (endWater-startWater) + ";" + (endTime-startTime), albumStorageDir);
-        }
+        this.inferenceTime = (System.currentTimeMillis() - startTime);
         return waterSuperpixels;
     }
 
     @Override
     public long getInferenceRuntime() {
-        return 0;
+        return this.inferenceTime;
+    }
+
+    @Override
+    public String getInferenceRuntimeFilename() {
+        return INFERENCE_RUNTIME_FILENAME;
     }
 
     /**
