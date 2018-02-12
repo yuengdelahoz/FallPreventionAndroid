@@ -1,17 +1,12 @@
 package usf.delahoz.fallprevention;
-
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Notification;
-import android.app.PendingIntent;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
-import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
@@ -20,11 +15,9 @@ import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.Toast;
-
 import java.util.ArrayList;
 
 public class MainActivity extends Activity {
-
     private static final int REQUEST_WRITE_STORAGE = 112;
     private static final int REQUEST_CAMERA = 113;
     private static final int REQUEST_READ_STORAGE = 114;
@@ -45,21 +38,21 @@ public class MainActivity extends Activity {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     canWrite = true;
                     Toast.makeText(getApplicationContext(), "Permission Granted", Toast.LENGTH_SHORT).show();
-                    Log.i("requests", "write request");
+                    Log.i(TAG, "write request");
                 }
                 /** ****************************************************************/
             case REQUEST_CAMERA:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     useCamera = true;
                     Toast.makeText(getApplicationContext(), "Permission Granted", Toast.LENGTH_SHORT).show();
-                    Log.i("requests", "camera request");
+                    Log.i(TAG, "camera request");
                 }
                 /** ****************************************************************/
             case REQUEST_READ_STORAGE:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     canRead = true;
                     Toast.makeText(getApplicationContext(), "Permission Granted", Toast.LENGTH_SHORT).show();
-                    Log.i("requests", "read request");
+                    Log.i(TAG, "read request");
                 }
                 /** ****************************************************************/
 
@@ -71,21 +64,7 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
-        boolean hasReadPermission = (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED);
-        if (!hasReadPermission){
-            requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_READ_STORAGE);
-        }
-        /** ****************************************************************/
-        boolean hasPermission = (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED);
-        if (!hasPermission){
-            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_WRITE_STORAGE);
-        }
-/** ****************************************************************/
-        boolean camPermission = (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED);
-        if (!camPermission){
-            requestPermissions(new String[]{Manifest.permission.CAMERA}, REQUEST_CAMERA);
-        }
+        checkAndRequestPermissions();
 
         final AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
         alertDialog.setTitle("Alert");
@@ -96,15 +75,12 @@ public class MainActivity extends Activity {
             }
         });
 
-
-
         final Switch isFloor = (Switch) findViewById(R.id.floor_detection);
         final Switch isObject = (Switch) findViewById(R.id.object_detection);
         final Switch isDistance = (Switch) findViewById(R.id.distance_estimation);
 
 //        Choose to run models locally or through the webapi
-        operation_mode = (Spinner) findViewById(R.id.operation_mode);
-        // Create an ArrayAdapter using the string array and a default spinner layout
+        operation_mode = (Spinner) findViewById(R.id.operation_mode); // Create an ArrayAdapter using the string array and a default spinner layout
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
                 R.array.operation_modes, android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -159,9 +135,28 @@ public class MainActivity extends Activity {
         });
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
+    public void checkAndRequestPermissions() {
+        int REQUEST_ID_MULTIPLE_PERMISSIONS =101;
+        ArrayList<String> requests = new ArrayList<String>();
+
+        boolean camPermission = (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED);
+        if (!camPermission){
+            requests.add(Manifest.permission.READ_EXTERNAL_STORAGE);
+        }
+        boolean hasReadPermission = (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED);
+        if (!hasReadPermission){
+            requests.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        }
+        boolean hasPermission = (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED);
+        if (!hasPermission){
+            requests.add(Manifest.permission.CAMERA);
+        }
+        if (!requests.isEmpty()){
+            ActivityCompat.requestPermissions(this, requests.toArray(new String[requests.size()]),
+                    REQUEST_ID_MULTIPLE_PERMISSIONS);
+
+        }
     }
+
 
 }

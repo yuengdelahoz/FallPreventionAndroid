@@ -120,14 +120,14 @@ public class ImageCollectorService extends Service {
         final Intent notificationIntent = new Intent(this, MainActivity.class);
         notificationIntent.putExtra("RUNNING_IN_BACKGROUND",true);
         PendingIntent pendingIntent =PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        Bitmap icon = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher_round);
+        Bitmap icon = BitmapFactory.decodeResource(getResources(), R.mipmap.slide);
         Notification.Builder builder =
                 new Notification.Builder(this)
                         .setContentTitle("Fall Prevention System")
                         .setContentText("Executing")
                         .setContentIntent(pendingIntent)
                         .setTicker(getText(R.string.app_name))
-                        .setSmallIcon(R.mipmap.ic_launcher)
+                        .setSmallIcon(R.mipmap.slide)
                         .setLargeIcon(Bitmap.createScaledBitmap(icon, 128, 128, false))
                         .setOngoing(true);
 
