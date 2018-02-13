@@ -1,9 +1,14 @@
 package usf.delahoz.fallprevention.nn_models;
 
+import android.app.AlertDialog;
+import android.app.Service;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -19,7 +24,11 @@ import org.opencv.core.Mat;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 
+import usf.delahoz.fallprevention.ImageCollectorService;
+import usf.delahoz.fallprevention.MainActivity;
 import usf.delahoz.fallprevention.Utils;
+
+import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 
 /**
  * Created by yuengdelahoz on 2/9/18.
@@ -33,13 +42,14 @@ public class RemoteDetector implements Detector{
     private final String TAG = getClass().getName();
     private JSONArray nn_models;
     private String filename = null;
+    private int exeption_counter = 10;
 
     public RemoteDetector(Context context, String[] models) {
         this.context = context;
         nn_models = new JSONArray(Arrays.asList(models));
         ConnectivityManager cm = (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-        filename = activeNetwork.getTypeName()+'_'+Arrays.toString(models)+"_inference_times.csv";
+        filename = activeNetwork.getTypeName()+'_'+Arrays.toString(models)+"_inference_times_trial_"+System.currentTimeMillis()+".csv";
     }
 
     @Override
@@ -73,16 +83,24 @@ public class RemoteDetector implements Detector{
              superpixels = fillData(result.getJSONArray(0));
             Log.d(TAG, "superpixels " + Arrays.toString(superpixels));
 
-        } catch (InterruptedException e) {
-            // exception handling
-        } catch (ExecutionException e) {
-            // exception handline
-        } catch (JSONException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            exeption_counter--;
+            if (exeption_counter < 1){
+                e.printStackTrace();
+                ImageCollectorService imagecollectorservice = (ImageCollectorService) this.context;
+                imagecollectorservice.setStopping_reason("due to connectivity issues with the server.");
+                imagecollectorservice.stopSelf();
+
+
+                Intent intent = new Intent(context,MainActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                imagecollectorservice.startActivity(intent);
+
+            }
         }
 
         this.inferenceTime = (System.currentTimeMillis() - start_time);
-        return null;
+        return superpixels;
     }
 
     @Override

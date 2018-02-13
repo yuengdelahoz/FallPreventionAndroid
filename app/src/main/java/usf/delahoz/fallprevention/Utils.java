@@ -182,7 +182,7 @@ public class Utils {
         File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),albumName);
         if (!file.mkdirs()) {
             // Shows this error also when directory already existed
-            Log.d("Error", "Directory not created");
+//            Log.d("Error", "Directory not created");
         }
         return file;
     }
@@ -222,19 +222,7 @@ public class Utils {
         buffer.get(bytes);
         MatOfByte m = new MatOfByte(bytes);
         Mat imgMat = imdecode(m, Imgcodecs.IMREAD_COLOR);
-        Log.d(TAG,"Mat height, width: " + imgMat.rows() +", "+imgMat.cols() + " Image height, width: " + img.getHeight() + ", " + img.getWidth());
+//        Log.d(TAG,"Mat height, width: " + imgMat.rows() +", "+imgMat.cols() + " Image height, width: " + img.getHeight() + ", " + img.getWidth());
         return imgMat.submat(0,240,39,279);
-
-//        Mat cropped = imgMat.submat(0,239,39,279);
-//        return cropped;
-//        // We need to resize the image because the floor detection model expects an input
-//        // image with dimensions 240x240
-//        Size szResized = new Size(240,240);
-//        Mat mSource = imgMat;
-//        Mat mResised = new Mat();
-//        Imgproc.resize(mSource, mResised, szResized,0,0, Imgproc.INTER_AREA);
-//        Mat im = new Mat();
-//        mResised.assignTo(im, CvType.CV_8UC3);
-//        return im;
     }
 }

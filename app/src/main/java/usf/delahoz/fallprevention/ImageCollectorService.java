@@ -42,6 +42,8 @@ import usf.delahoz.fallprevention.callbacks.CameraStateCallback;
 import usf.delahoz.fallprevention.callbacks.ImageAvailableCallback;
 import usf.delahoz.fallprevention.callbacks.OpenCvCallback;
 
+import static android.os.Process.killProcess;
+
 /**
  * Created by Panos on 11/11/2016.
  */
@@ -72,6 +74,12 @@ public class ImageCollectorService extends Service {
     private HandlerThread mBackgroundThread;
     private Handler mBackgroundHandler;
     private CameraCharacteristics mCharacteristics;
+
+    public void setStopping_reason(String stopping_reason) {
+        this.stopping_reason = stopping_reason;
+    }
+
+    private String stopping_reason = "";
 
     // Callbacks
     private OpenCvCallback opencv_callback = new OpenCvCallback(this);
@@ -182,7 +190,7 @@ public class ImageCollectorService extends Service {
 
         //background thread started, so we do not block ui thread
         startBackgroundThread();
-        Toast.makeText(this, "Service starting", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Starting service", Toast.LENGTH_SHORT).show();
         CameraManager manager = (CameraManager) getSystemService(CAMERA_SERVICE);
         try {
             imageReader = ImageReader.newInstance(240, 240,  ImageFormat.JPEG, 2);
@@ -214,6 +222,7 @@ public class ImageCollectorService extends Service {
     public void onDestroy() {
         closeCamera();
         stopForeground(true);
+        Toast.makeText(this, "Stopping service " + stopping_reason, Toast.LENGTH_LONG).show();
     }
 
     //@Nullable
@@ -266,7 +275,6 @@ public class ImageCollectorService extends Service {
      */
     private void closeCamera() {
         Log.i(TAG,"Closing Camera");
-        Toast.makeText(this, "stopping service", Toast.LENGTH_SHORT).show();
         try {
             mCameraOpenCloseLock.acquire();
             if (null != session) {

@@ -2,7 +2,7 @@
     <string name="app_name">Fall Prevention NN</string>
     <string name="launch">Launch</string>
     <string-array name="operation_modes">
-        <item>Local</item>
         <item>WebAPI</item>
+        <item>Local</item>
     </string-array>
 </resources>
