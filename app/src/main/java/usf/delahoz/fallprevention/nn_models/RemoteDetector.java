@@ -1,14 +1,11 @@
 package usf.delahoz.fallprevention.nn_models;
 
-import android.app.AlertDialog;
-import android.app.Service;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
+import android.media.AudioManager;
+import android.media.ToneGenerator;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -22,19 +19,15 @@ import org.json.JSONObject;
 import org.opencv.core.Mat;
 
 import java.util.Arrays;
-import java.util.concurrent.ExecutionException;
 
-import usf.delahoz.fallprevention.ImageCollectorService;
-import usf.delahoz.fallprevention.MainActivity;
 import usf.delahoz.fallprevention.Utils;
-
-import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 
 /**
  * Created by yuengdelahoz on 2/9/18.
  */
 
 public class RemoteDetector implements Detector{
+    private RequestQueue requestQueue = null;
     private String URL ="http://research.jadorno.com:8100/fallprevention";
     private String KEY_IMAGE = "image";
     private Context context;
@@ -59,44 +52,34 @@ public class RemoteDetector implements Detector{
          * information useful for debugging purposes (Downloads/Logs/Log.txt)
          * @param im - The image captured
          */
-        final String encodedImage = Utils.createEncodedImage(image);
+        float [] superpixels = null;
         JSONObject params = new JSONObject();
         try {
+            final String encodedImage = Utils.createEncodedImage(image);
             params.put(KEY_IMAGE,encodedImage);
             params.put("models",nn_models);
             params.put("start_time",start_time);
             params.put("filename",filename);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
         RequestFuture<JSONObject> future = RequestFuture.newFuture();
         JsonObjectRequest jsonRequest = new JsonObjectRequest(Request.Method.POST, URL,params,future,future);
 
         //Creating a Request Queue
-        RequestQueue requestQueue = Volley.newRequestQueue(this.context);
         //Adding request to the queue
-        requestQueue.add(jsonRequest);
-        float [] superpixels = null;
-        try {
+        if (requestQueue == null) {
+            requestQueue = Volley.newRequestQueue(this.context);
+        }
+            requestQueue.add(jsonRequest);
             JSONObject response = future.get(); // this will block
             JSONArray result = response.getJSONArray("result");
              superpixels = fillData(result.getJSONArray(0));
             Log.d(TAG, "superpixels " + Arrays.toString(superpixels));
 
         } catch (Exception e) {
-            exeption_counter--;
-            if (exeption_counter < 1){
-                e.printStackTrace();
-                ImageCollectorService imagecollectorservice = (ImageCollectorService) this.context;
-                imagecollectorservice.setStopping_reason("due to connectivity issues with the server.");
-                imagecollectorservice.stopSelf();
+            e.printStackTrace();
+            ToneGenerator toneGen1 = new ToneGenerator(AudioManager.STREAM_MUSIC, 100);
+            toneGen1.startTone(ToneGenerator.TONE_CDMA_PIP,150);
+            return null;
 
-
-                Intent intent = new Intent(context,MainActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                imagecollectorservice.startActivity(intent);
-
-            }
         }
 
         this.inferenceTime = (System.currentTimeMillis() - start_time);

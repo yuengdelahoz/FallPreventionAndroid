@@ -57,23 +57,20 @@ public class ImageAvailableCallback implements ImageReader.OnImageAvailableListe
         if (img == null) return;
         if (img.getFormat() == ImageFormat.JPEG) {
             //check if we have external storage to write to. if we do, save acquired image
-            if (Utils.isExternalStorageWritable())
-            {
-                try {
-                    long start_time = System.currentTimeMillis();
-                    Mat im = Utils.createInputMat(img);
-                    float[] inferenceResult = detector.runInference(im, start_time);
-                    if (Utils.isExternalStorageWritable()) { // Write the execution times in a file in Downloads/Exec Times folder in the phone
-                        Utils.mSaveData(detector.getInferenceRuntimeFilename(),
-                                start_time + "," + detector.getInferenceRuntime(),
-                                Utils.getAlbumStorageDir(INFERENCE_RUNTIME_FOLDER));
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
+            try {
+                long start_time = System.currentTimeMillis();
+                Mat im = Utils.createInputMat(img);
+                float[] inferenceResult = detector.runInference(im, start_time);
+                if (Utils.isExternalStorageWritable() && inferenceResult!=null) { // Write the execution times in a file in Downloads/Exec Times folder in the phone
+                    Utils.mSaveData(detector.getInferenceRuntimeFilename(),
+                            start_time + "," + detector.getInferenceRuntime(),
+                            Utils.getAlbumStorageDir(INFERENCE_RUNTIME_FOLDER));
                 }
-                finally {
-                    img.close();
-                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            finally {
+                img.close();
             }
         }
     }
