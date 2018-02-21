@@ -78,6 +78,7 @@ public class MainActivity extends Activity {
         final Switch isFloor = (Switch) findViewById(R.id.floor_detection);
         final Switch isObject = (Switch) findViewById(R.id.object_detection);
         final Switch isDistance = (Switch) findViewById(R.id.distance_estimation);
+        final Switch isWater = (Switch) findViewById(R.id.water_detection);
 
 //        Choose to run models locally or through the webapi
         operation_mode = (Spinner) findViewById(R.id.operation_mode); // Create an ArrayAdapter using the string array and a default spinner layout
@@ -118,6 +119,7 @@ public class MainActivity extends Activity {
                     isFloor.setEnabled(false);
                     isObject.setEnabled(false);
                     isDistance.setEnabled(false);
+                    isWater.setEnabled(false);
                     startService(processImage);
 
                 } else if (btn.getText().toString().equals("Stop")) { //Stop

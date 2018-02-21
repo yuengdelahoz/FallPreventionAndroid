@@ -5,6 +5,7 @@ import android.media.AudioManager;
 import android.media.ToneGenerator;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.PowerManager;
 import android.util.Log;
 
 import com.android.volley.Request;
@@ -42,7 +43,14 @@ public class RemoteDetector implements Detector{
         nn_models = new JSONArray(Arrays.asList(models));
         ConnectivityManager cm = (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-        filename = activeNetwork.getTypeName()+'_'+Arrays.toString(models)+"_inference_times_trial_"+System.currentTimeMillis()+".csv";
+        PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        String SCREEN_MODE = pm.isInteractive() ? "SCREEN_ON": "SCREEN_OFF";
+        filename = activeNetwork.getTypeName()+'_'+SCREEN_MODE+'_'+Arrays.toString(models)+"_inference_times_trial_"+System.currentTimeMillis()+".csv";
     }
 
     @Override
