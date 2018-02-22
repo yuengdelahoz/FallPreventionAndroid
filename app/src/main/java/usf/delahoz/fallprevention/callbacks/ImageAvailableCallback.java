@@ -37,7 +37,7 @@ public class ImageAvailableCallback implements ImageReader.OnImageAvailableListe
         Log.d(TAG,"Constructor: Processing Image using models" + Arrays.toString(nn_models));
         switch (mode){
             case LOCAL:
-                this.detector = DetectorFactory.createFloorDetector(context.getAssets());
+                this.detector = DetectorFactory.createAllDetector(context.getAssets(),context);
                 break;
             case WEBAPI:
                 this.detector = DetectorFactory.createRemoteDetector(context,nn_models);

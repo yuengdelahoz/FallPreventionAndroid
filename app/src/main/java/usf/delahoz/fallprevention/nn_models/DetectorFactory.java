@@ -47,4 +47,9 @@ public class DetectorFactory {
         return new RemoteDetector(context, models);
     }
 
+    public static Detector createAllDetector(AssetManager assetManager, Context context) {
+        return new AllDetector(assetManager,context);
+    }
+
+
 }
